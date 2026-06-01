@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block titulo_cabecalho %}Relatório de Reposição{% endblock %}
+{% block subtitulo_cabecalho %}Lista de abastecimento dos frigobares por unidade{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos para a versão de impressão */
+    @media print {
+        aside, header, .no-print, nav { display: none !important; }
+        main { margin-left: 0 !important; padding: 0 !important; }
+        .bg-slate-50 { background-color: white !important; }
+        .rounded-3xl { border-radius: 0 !important; }
+        .shadow-sm { shadow: none !important; }
+        .border { border: 1px solid #e2e8f0 !important; }
+    }
+</style>
+
+<div class="max-w-5xl mx-auto space-y-6">
+    
+    <!-- BARRA DE AÇÕES -->
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center no-print">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">
+                <i class="fa fa-clipboard-list text-xl"></i>
+            </div>
+            <div>
+                <h3 class="font-black text-slate-800 uppercase text-xs tracking-widest">Guia de Abastecimento</h3>
+                <p class="text-[10px] text-slate-400 font-bold uppercase">Gerado em: {% now "d/m/Y H:i" %}</p>
+            </div>
+        </div>
+        
+        <div class="flex gap-3 w-full md:w-auto">
+            <button onclick="window.print()" class="flex-1 md:flex-none px-6 py-3 bg-slate-800 text-white font-black text-xs rounded-2xl shadow-lg hover:bg-black transition flex items-center justify-center gap-2">
+                <i class="fa fa-print"></i> IMPRIMIR LISTA
+            </button>
+        </div>
+    </div>
+
+    <!-- TABELA DO RELATÓRIO -->
+    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+        <div class="p-8 border-b border-slate-50 bg-slate-50/30">
+            <h4 class="text-sm font-black text-slate-700 uppercase tracking-tighter">Itens em falta nas unidades</h4>
+        </div>
+        
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50/80 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                <tr>
+                    <th class="px-8 py-5">Unidade / Quarto</th>
+                    <th class="px-8 py-5">Produto</th>
+                    <th class="px-8 py-5 text-center">Saldo Atual</th>
+                    <th class="px-8 py-5 text-center">Capacidade</th>
+                    <th class="px-8 py-5 text-right">Qtd. para Repor</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for item in itens %}
+                <tr class="hover:bg-amber-50/30 transition-colors">
+                    <td class="px-8 py-5">
+                        <div class="flex items-center gap-3">
+                            <span class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs">
+                                {{ item.quarto.numero }}
+                            </span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                {{ item.quarto.categoria.nome }}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-8 py-5">
+                        <p class="text-sm font-black text-slate-700">{{ item.produto.nome }}</p>
+                    </td>
+                    <td class="px-8 py-5 text-center">
+                        <span class="text-xs font-mono font-bold text-slate-500">{{ item.quantidade_atual }}</span>
+                    </td>
+                    <td class="px-8 py-5 text-center">
+                        <span class="text-xs font-mono font-bold text-slate-400">{{ item.capacidade_maxima }}</span>
+                    </td>
+                    <td class="px-8 py-5 text-right">
+                        <div class="inline-flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-xl border border-rose-100">
+                            <i class="fa fa-arrow-up text-[10px]"></i>
+                            <span class="text-sm font-black">{{ item.necessidade }}</span>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-8 py-24 text-center">
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center">
+                                <i class="fa fa-check-double text-3xl"></i>
+                            </div>
+                            <p class="text-slate-400 font-bold uppercase text-xs tracking-widest">Tudo em ordem! Nenhum frigobar precisa de reposição.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- RODAPÉ DO RELATÓRIO (Apenas Impressão) -->
+        <div class="hidden print:block p-8 mt-10 border-t-2 border-dashed border-slate-200">
+            <div class="flex justify-between items-end">
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Responsável pela Reposição</p>
+                    <div class="w-64 border-b border-slate-300 mt-8"></div>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Conferência Governança</p>
+                    <div class="w-64 border-b border-slate-300 mt-8"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Financeiro - {{ empresa.nome }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Ajustes para Impressão */
+        @media print {
+            body { 
+                -webkit-print-color-adjust: exact; 
+                font-size: 9pt; 
+            }
+            .no-print { display: none !important; }
+            .page-break { page-break-inside: avoid; }
+            @page { margin: 1cm; }
+        }
+        
+        body { font-family: 'Inter', sans-serif; font-size: 11px; }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 print:bg-white print:p-0 text-gray-800 font-sans">
+
+    <div class="max-w-5xl mx-auto bg-white shadow-lg print:shadow-none print:w-full min-h-screen relative pb-10">
+        
+        <!-- 1. CABEÇALHO -->
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-start">
+            <div class="flex items-center gap-3">
+                {% if empresa.logo %}
+                    <img src="{{ empresa.logo.url }}" class="h-10 w-auto object-contain">
+                {% else %}
+                    <div class="h-10 w-10 bg-gray-800 text-white flex items-center justify-center font-bold rounded text-lg">
+                        {{ empresa.nome|slice:":1" }}
+                    </div>
+                {% endif %}
+                <div>
+                    <h1 class="text-lg font-bold uppercase tracking-wide text-gray-800 leading-tight">{{ empresa.nome }}</h1>
+                    <p class="text-[10px] text-gray-500">CNPJ: {{ empresa.cnpj }}</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <h2 class="text-base font-semibold text-gray-700">Relatório de Fluxo de Caixa</h2>
+                <p class="text-[10px] text-gray-400 mt-0.5">Emitido em {% now "d/m/Y H:i" %}</p>
+            </div>
+        </div>
+
+        <!-- 2. BARRA DE FILTROS -->
+        <div class="px-6 py-2 bg-gray-50 border-b border-gray-200 flex gap-8 text-xs print:bg-gray-50">
+            <div>
+                <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Período:</span>
+                <span class="font-semibold text-gray-700 ml-1">{{ data_inicio|date:"d/m/Y" }} a {{ data_fim|date:"d/m/Y" }}</span>
+            </div>
+            <div>
+                <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Conta:</span>
+                <span class="font-semibold text-gray-700 ml-1">
+                    {% if caixa_selecionado %}
+                        {{ caixa_selecionado.nome }}
+                    {% else %}
+                        Consolidado (Todos os Caixas)
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="p-6 space-y-6">
+            
+            <!-- 3. BLOCO DE RECEITAS -->
+            <div class="page-break">
+                <div class="flex items-center mb-2 border-b border-green-200 pb-1">
+                    <h3 class="text-xs font-bold text-green-700 uppercase">Receitas (Entradas)</h3>
+                </div>
+                
+                <table class="w-full text-[10px]">
+                    <thead>
+                        <tr class="text-[9px] text-gray-400 uppercase border-b border-gray-100">
+                            <th class="py-1 text-left font-medium w-24">Data</th>
+                            <th class="py-1 text-left font-medium">Descrição</th>
+                            <th class="py-1 text-left font-medium w-48">Categoria</th>
+                            <th class="py-1 text-right font-medium w-28">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        {% for item in receitas %}
+                        <tr>
+                            <td class="py-1 text-gray-600">{{ item.data_lancamento|date:"d/m/Y" }}</td>
+                            <td class="py-1 font-medium text-gray-800 uppercase truncate max-w-xs">{{ item.descricao }}</td>
+                            <td class="py-1 text-gray-500 truncate">{{ item.plano_de_contas.nome|default:"-" }}</td>
+                            <td class="py-1 text-right font-bold text-green-600">R$ {{ item.valor|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="py-2 text-center text-gray-400 italic">Nenhuma receita.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 4. BLOCO DE DESPESAS -->
+            <div class="page-break">
+                <div class="flex items-center mb-2 border-b border-red-200 pb-1">
+                    <h3 class="text-xs font-bold text-red-700 uppercase">Despesas (Saídas)</h3>
+                </div>
+                
+                <table class="w-full text-[10px]">
+                    <thead>
+                        <tr class="text-[9px] text-gray-400 uppercase border-b border-gray-100">
+                            <th class="py-1 text-left font-medium w-24">Data</th>
+                            <th class="py-1 text-left font-medium">Descrição</th>
+                            <th class="py-1 text-left font-medium w-48">Categoria</th>
+                            <th class="py-1 text-right font-medium w-28">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        {% for item in despesas %}
+                        <tr>
+                            <td class="py-1 text-gray-600">{{ item.data_lancamento|date:"d/m/Y" }}</td>
+                            <td class="py-1 font-medium text-gray-800 uppercase truncate max-w-xs">{{ item.descricao }}</td>
+                            <td class="py-1 text-gray-500 truncate">{{ item.plano_de_contas.nome|default:"-" }}</td>
+                            <td class="py-1 text-right font-bold text-red-600">R$ {{ item.valor|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="py-2 text-center text-gray-400 italic">Nenhuma despesa.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 5. QUADRO DE RESUMO GERAL (NO FINAL) -->
+            <div class="page-break mt-8 pt-4 border-t-2 border-gray-800 flex justify-end">
+                <div class="w-full md:w-1/2 bg-gray-50 rounded border border-gray-200 p-4">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b border-gray-200 pb-2">Resumo Financeiro</h4>
+                    
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">Saldo Anterior ({{ data_inicio|date:"d/m" }}):</span>
+                            <span class="font-bold {% if saldo_anterior < 0 %}text-red-600{% else %}text-gray-800{% endif %}">
+                                R$ {{ saldo_anterior|floatformat:2 }}
+                            </span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <span class="text-green-700 font-medium">Total Entradas:</span>
+                            <span class="font-bold text-green-700">+ R$ {{ total_receitas|floatformat:2 }}</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <span class="text-red-700 font-medium">Total Saídas:</span>
+                            <span class="font-bold text-red-700">R$ {{ total_despesas|floatformat:2 }}</span>
+                        </div>
+
+                        <!-- Linha Divisória -->
+                        <div class="border-t border-gray-300 my-2"></div>
+
+                        <div class="flex justify-between items-center bg-white p-2 rounded border border-blue-100">
+                            <span class="text-blue-800 font-bold uppercase text-sm">Saldo Final ({{ data_fim|date:"d/m" }}):</span>
+                            <span class="text-base font-bold {% if saldo_final < 0 %}text-red-700{% else %}text-blue-700{% endif %}">
+                                R$ {{ saldo_final|floatformat:2 }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Botão Flutuante -->
+        <div class="fixed bottom-8 right-8 no-print">
+            <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded-full shadow-lg transition transform hover:scale-105 flex items-center border border-gray-600 text-xs">
+                <i class="fas fa-print mr-2"></i> Imprimir
+            </button>
+        </div>
+
+    </div>
+</body>
+</html>

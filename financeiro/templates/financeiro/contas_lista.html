@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block titulo_cabecalho %}Financeiro{% endblock %}
+{% block subtitulo_cabecalho %}{{ titulo }}{% endblock %}
+{% block breadcrumb %}Contas{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded shadow border-t-4 {% if tipo_lista == 'receber' %}border-green-500{% else %}border-red-500{% endif %}">
+    
+    <!-- BARRA DE FILTROS -->
+    <div class="p-4 bg-gray-50 border-b flex flex-col lg:flex-row gap-4 justify-between items-end">
+        <form method="GET" class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 w-full">
+            <div class="md:col-span-3">
+                <label class="text-[10px] font-bold text-gray-500 uppercase">{% if tipo_lista == 'receber' %}Cliente{% else %}Favorecido{% endif %}</label>
+                <input type="text" name="cliente" value="{{ filtro_nome|default:'' }}" class="w-full border p-2 rounded text-sm h-9" placeholder="Buscar nome...">
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Categoria</label>
+                <select name="categoria" class="w-full border p-2 rounded text-sm h-9 bg-white">
+                    <option value="">Todas</option>
+                    {% for cat in categorias %}<option value="{{ cat.id }}" {% if filtro_categoria == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nome }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="md:col-span-2"><label class="text-[10px] font-bold text-gray-500 uppercase">Início</label><input type="date" name="data_ini" value="{{ filtro_data_ini|default:'' }}" class="w-full border p-2 rounded text-sm h-9"></div>
+            <div class="md:col-span-2"><label class="text-[10px] font-bold text-gray-500 uppercase">Até</label><input type="date" name="data_fim" value="{{ filtro_data_fim|default:'' }}" class="w-full border p-2 rounded text-sm h-9"></div>
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Status</label>
+                <select name="status" class="w-full border p-2 rounded text-sm h-9 bg-white">
+                    <option value="">Todos</option>
+                    <option value="PENDENTE" {% if filtro_status == 'PENDENTE' %}selected{% endif %}>Pendentes</option>
+                    <option value="PAGA" {% if filtro_status == 'PAGA' %}selected{% endif %}>Baixadas</option>
+                </select>
+            </div>
+            <div class="md:col-span-1 flex gap-1">
+                <button type="submit" class="bg-gray-700 text-white px-2 rounded hover:bg-gray-800 text-sm h-9 flex items-center justify-center flex-1"><i class="fa fa-search"></i></button>
+                <a href="{% url 'financeiro:relatorio_contas' %}?tipo_lista={{ tipo_lista }}&data_ini={{ filtro_data_ini|default:'' }}&data_fim={{ filtro_data_fim|default:'' }}&cliente={{ filtro_nome|default:'' }}&status={{ filtro_status|default:'' }}&categoria={{ filtro_categoria|default:'' }}" target="_blank" class="bg-blue-600 text-white px-2 rounded hover:bg-blue-700 text-sm h-9 flex items-center justify-center flex-1" title="Imprimir"><i class="fa fa-print"></i></a>
+            </div>
+        </form>
+        <div class="hidden lg:block border-l pl-4 ml-2">
+            {% if tipo_lista == 'receber' %}
+                <a href="{% url 'financeiro:nova_receita' %}" class="bg-green-600 text-white px-4 py-2 rounded shadow text-sm font-bold h-9 flex items-center"><i class="fa fa-plus-circle mr-2"></i> Novo Recebimento</a>
+            {% else %}
+                <a href="{% url 'financeiro:nova_despesa' %}" class="bg-red-600 text-white px-4 py-2 rounded shadow text-sm font-bold h-9 flex items-center"><i class="fa fa-minus-circle mr-2"></i> Novo Pagamento</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-100 text-[10px] font-bold text-gray-500 uppercase">
+                <tr>
+                    <th class="px-6 py-3 text-left">Vencimento</th>
+                    <th class="px-6 py-3 text-left">Favorecido</th>
+                    <th class="px-6 py-3 text-left">Descrição</th>
+                    <th class="px-6 py-3 text-right">Valor</th>
+                    <th class="px-6 py-3 text-center">Status</th>
+                    <th class="px-6 py-3 text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                {% for c in contas %}
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 font-mono">{{ c.data_vencimento|date:"d/m/Y" }}</td>
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-gray-900">
+                            {% if c.tipo_favorecido == 'FUNCIONARIO' %}
+                                <span class="text-indigo-600"><i class="fa fa-user-tie mr-1 text-xs"></i> {{ c.funcionario.nome_completo }}</span>
+                            {% else %}
+                                <span><i class="fa fa-building text-gray-400 mr-1 text-xs"></i> {{ c.cadastro.nome|default:"--" }}</span>
+                            {% endif %}
+                        </div>
+                        <span class="text-[10px] text-gray-400 uppercase">{{ c.plano_de_contas.nome }}</span>
+                    </td>
+                        <td class="px-6 py-4">
+                            <div class="text-gray-900 font-medium">{{ c.descricao }}</div>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <!-- Badge do Número do Documento -->
+                                {% if c.documento %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase">
+                                        <i class="fa fa-file-invoice mr-1"></i> NF: {{ c.documento }}
+                                    </span>
+                                {% endif %}
+
+                                <!-- Link do Anexo -->
+                                {% if c.arquivo %}
+                                    <a href="{{ c.arquivo.url }}" target="_blank" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 transition">
+                                        <i class="fa fa-paperclip mr-1"></i> VER ANEXO
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </td>   
+                 <td class="px-6 py-4 text-right font-bold {% if c.tipo == 'RECEBER' %}text-green-600{% else %}text-red-600{% endif %}">R$ {{ c.valor|floatformat:2 }}</td>
+                    <td class="px-6 py-4 text-center">
+                        {% if c.status == 'PAGA' %}<span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-[10px] font-bold">BAIXADA</span>
+                        {% else %}<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-[10px] font-bold">PENDENTE</span>{% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                        {% if c.status == 'PENDENTE' %}
+                        <button onclick="abrirModalBaixa('{{ c.id }}', '{% if c.tipo_favorecido == 'FUNCIONARIO' %}{{ c.funcionario.nome_completo|escapejs }}{% else %}{{ c.cadastro.nome|default:'Não informado'|escapejs }}{% endif %}', '{{ c.descricao|escapejs }}', '{{ c.valor|floatformat:2 }}', '{% if c.tipo_favorecido == 'FUNCIONARIO' %}{{ c.funcionario.pix|default:'NÃO CADASTRADO'|escapejs }}{% else %}N/A{% endif %}')" 
+                                class="bg-green-500 hover:bg-green-600 text-white p-1.5 rounded shadow transition hover:scale-110"><i class="fa fa-check"></i></button>
+                        {% endif %}
+                        <a href="{% url 'financeiro:editar_conta' c.id %}" class="bg-blue-500 text-white p-1.5 rounded shadow ml-1"><i class="fa fa-edit"></i></a>
+                        <a href="{% url 'financeiro:excluir_conta' c.id %}" onclick="return confirm('Excluir?')" class="bg-red-500 text-white p-1.5 rounded shadow ml-1"><i class="fa fa-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="px-6 py-10 text-center text-gray-400">Nenhum lançamento encontrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL DE BAIXA ATUALIZADO -->
+<div id="modalBaixa" class="fixed inset-0 bg-black bg-opacity-70 hidden overflow-y-auto h-full w-full z-[9999] flex items-center justify-center p-4">
+    <div class="relative p-6 border shadow-2xl rounded-lg bg-white w-full max-w-md">
+        <div class="text-center">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Confirmar Baixa</h3>
+            
+            <div class="text-left bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Favorecido</p>
+                <p class="text-base font-bold text-gray-800 mb-4" id="modalCliente">...</p>
+                
+                <div id="boxModalPix" class="hidden bg-indigo-50 p-3 rounded border border-indigo-100 mb-4">
+                    <p class="text-[9px] text-indigo-400 uppercase font-bold mb-1">Chave PIX do Funcionário</p>
+                    <p class="text-sm font-black text-indigo-700 select-all" id="modalPix">...</p>
+                </div>
+                
+                <div class="flex justify-between items-center border-t border-gray-200 pt-3">
+                    <span class="text-xs font-bold text-gray-500 uppercase">Valor:</span>
+                    <span class="text-xl font-black text-green-600">R$ <span id="modalValor">...</span></span>
+                </div>
+            </div>
+            
+            <!-- IMPORTANTE: Adicionado enctype para upload de arquivos -->
+            <form id="formBaixa" method="POST" action="" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="text-left space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Data da Baixa</label>
+                            <input type="date" name="data_pagamento" required class="w-full rounded border-gray-300 shadow-sm border p-2 text-sm focus:ring-2 focus:ring-green-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nº Documento/NF</label>
+                            <input type="text" name="documento_baixa" placeholder="Ex: NF 123" class="w-full rounded border-gray-300 shadow-sm border p-2 text-sm focus:ring-2 focus:ring-green-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Conta / Caixa de Saída</label>
+                        <select name="caixa" required class="w-full rounded border-gray-300 border p-2 text-sm bg-white focus:ring-2 focus:ring-green-500">
+                            <option value="">-- Selecione o Caixa --</option>
+                            {% for caixa in caixas %}<option value="{{ caixa.id }}">{{ caixa.nome }}</option>{% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Anexar Comprovante / NF</label>
+                        <input type="file" name="arquivo_baixa" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-8">
+                    <button type="button" onclick="document.getElementById('modalBaixa').classList.add('hidden')" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded hover:bg-gray-300 transition">CANCELAR</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white font-bold rounded hover:bg-green-700 shadow-lg transition uppercase">Confirmar Baixa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModalBaixa(id, favorecido, descricao, valor, pix) {
+        const modal = document.getElementById('modalBaixa');
+        modal.classList.remove('hidden');
+        
+        document.getElementById('modalCliente').innerText = favorecido;
+        document.getElementById('modalValor').innerText = valor;
+        
+        const boxPix = document.getElementById('boxModalPix');
+        const txtPix = document.getElementById('modalPix');
+        if (pix && pix !== 'N/A' && pix !== 'NÃO CADASTRADO') {
+            boxPix.classList.remove('hidden');
+            txtPix.innerText = pix;
+        } else {
+            boxPix.classList.add('hidden');
+        }
+        
+        const hoje = new Date().toISOString().split('T')[0];
+        document.getElementsByName('data_pagamento')[0].value = hoje;
+        document.getElementById('formBaixa').action = "/financeiro/contas/baixar/" + id + "/";
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('modalBaixa');
+        if (event.target == modal) { modal.classList.add('hidden'); }
+    }
+</script>
+{% endblock %}

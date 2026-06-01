@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex justify-between items-center">
+        <h3 class="font-black text-slate-800 uppercase text-xs tracking-widest">Produtos no Depósito</h3>
+        <a href="{% url 'estoque:entrada_estoque' %}" class="bg-emerald-600 text-white px-6 py-2 rounded-xl text-xs font-black shadow-lg shadow-emerald-100">
+            <i class="fa fa-plus mr-1"></i> ENTRADA DE NOTA
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-slate-50 text-[10px] font-black uppercase text-slate-400">
+                <tr>
+                    <th class="px-6 py-4">Produto</th>
+                    <th class="px-6 py-4">Custo</th>
+                    <th class="px-6 py-4">Venda</th>
+                    <th class="px-6 py-4 text-center">Saldo Depósito</th>
+                    <th class="px-6 py-4 text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for p in produtos %}
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-6 py-4 font-bold text-slate-700">{{ p.nome }}</td>
+                    <td class="px-6 py-4 text-xs text-slate-400">R$ {{ p.valor_custo }}</td>
+                    <td class="px-6 py-4 text-sm font-black text-blue-600">R$ {{ p.preco_venda }}</td>
+                    <td class="px-6 py-4 text-center font-mono font-bold">{{ p.estoque_deposito }}</td>
+                    <td class="px-6 py-4 text-center">
+                        {% if p.estoque_deposito <= p.estoque_minimo %}
+                            <span class="text-rose-500 text-[10px] font-black uppercase tracking-tighter">Estoque Baixo</span>
+                        {% else %}
+                            <span class="text-emerald-500 text-[10px] font-black uppercase tracking-tighter">OK</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

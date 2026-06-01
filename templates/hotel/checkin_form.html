@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block titulo_cabecalho %}Realizar Check-in{% endblock %}
+{% block subtitulo_cabecalho %}Quarto {{ quarto.numero }} - {{ quarto.categoria.nome }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-3xl shadow-sm border p-8">
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="mb-6">
+            <label class="block text-xs font-black text-slate-500 uppercase mb-2">Selecionar Hóspede</label>
+            {{ form.hospede }}
+            <p class="mt-2 text-[10px] text-slate-400">Não encontrou o hóspede? <a href="{% url 'novo_hospede' %}" class="text-blue-600 underline">Cadastre aqui</a></p>
+        </div>
+
+        <div class="mb-8">
+            <label class="block text-xs font-black text-slate-500 uppercase mb-2">Tipo de Estadia</label>
+            {{ form.tipo }}
+            <p class="mt-2 text-[10px] text-slate-400">Diária: Valor fixo por dia | Hora: Valor calculado no checkout.</p>
+        </div>
+
+        <div class="flex gap-4">
+            <a href="{% url 'hotel:mapa_quartos' %}" class="flex-1 text-center py-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">CANCELAR</a>
+            <button type="submit" class="flex-1 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition">CONFIRMAR ENTRADA</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

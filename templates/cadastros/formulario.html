@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block titulo_cabecalho %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <form method="post" class="space-y-6" id="formCadastro">
+        {% csrf_token %}
+        
+        <!-- SEÇÃO 1: IDENTIFICAÇÃO PRINCIPAL -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 grid grid-cols-1 md:grid-cols-12 gap-6">
+            <div class="md:col-span-12 border-b pb-4 mb-2">
+                <h3 class="font-black text-slate-700 uppercase text-xs tracking-widest flex items-center gap-2">
+                    <i class="fa fa-address-card text-blue-500"></i> Identificação do Hóspede / Empresa
+                </h3>
+            </div>
+            
+            <div class="md:col-span-6">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Nome / Razão Social</label>
+                {{ form.nome }}
+            </div>
+            
+            <div class="md:col-span-3">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Tipo Pessoa</label>
+                {{ form.tipo_pessoa }}
+            </div>
+            
+            <div class="md:col-span-3">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Papel do Cadastro</label>
+                {{ form.papel }}
+            </div>
+            
+            <!-- Campos com Máscara -->
+            <div class="md:col-span-3 div-pf">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">CPF</label>
+                {{ form.cpf }}
+            </div>
+            
+            <div class="md:col-span-3 div-pj hidden">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">CNPJ</label>
+                {{ form.cnpj }}
+            </div>
+            
+            <div class="md:col-span-3">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">RG / Inscrição</label>
+                {{ form.rg }}
+            </div>
+            
+            <div class="md:col-span-3">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Data Nasc. / Fundação</label>
+                {{ form.data_nascimento }}
+            </div>
+        </div>
+
+        <!-- HOTELARIA E CONVÊNIO -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Dados FNRH -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 space-y-4">
+                <h3 class="font-black text-slate-700 uppercase text-[10px] tracking-widest border-b pb-4 mb-2">
+                    <i class="fa fa-info-circle text-blue-500 mr-2"></i>Dados de Hospedagem (FNRH)
+                </h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Profissão</label>
+                        {{ form.profissao }}
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Nacionalidade</label>
+                        {{ form.nacionalidade }}
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Gênero</label>
+                        {{ form.genero }}
+                    </div>
+                    <div class="col-span-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Passaporte (Estrangeiros)</label>
+                        {{ form.passaporte }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dados Faturamento -->
+            <div class="bg-blue-50 rounded-3xl shadow-sm border border-blue-100 p-8 space-y-4">
+                <h3 class="font-black text-blue-700 uppercase text-[10px] tracking-widest border-b border-blue-200 pb-4 mb-2">
+                    <i class="fa fa-building mr-2"></i>Faturamento Corporativo
+                </h3>
+                <div>
+                    <label class="text-[10px] font-black text-blue-400 uppercase ml-1 mb-1 block">Empresa Conveniada (Quem paga)</label>
+                    {{ form.empresa_convenio }}
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-blue-400 uppercase ml-1 mb-1 block">Categoria de Tarifa</label>
+                    {{ form.categoria }}
+                </div>
+                <p class="text-[10px] text-blue-600/60 italic leading-tight">
+                    * Vincule hóspedes a empresas para gerar cobranças unificadas no final do período.
+                </p>
+            </div>
+        </div>
+
+        <!-- SEÇÃO 3: CONTATO E LOCALIZAÇÃO -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+            <h3 class="font-black text-slate-700 uppercase text-[10px] tracking-widest mb-6 flex items-center gap-2 border-b pb-4">
+                <i class="fa fa-map-marker-alt text-blue-500"></i> Contato e Localização
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <div class="md:col-span-4">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">E-mail</label>
+                    {{ form.email }}
+                </div>
+                <div class="md:col-span-4">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Celular / WhatsApp</label>
+                    {{ form.celular }}
+                </div>
+                <div class="md:col-span-4">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Telefone Fixo</label>
+                    {{ form.telefone_fixo }}
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">CEP</label>
+                    {{ form.cep }}
+                </div>
+                <div class="md:col-span-8">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Endereço (Rua/Av)</label>
+                    {{ form.logradouro }}
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Número</label>
+                    {{ form.numero }}
+                </div>
+
+                <div class="md:col-span-4">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Bairro</label>
+                    {{ form.bairro }}
+                </div>
+                <div class="md:col-span-6">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Cidade</label>
+                    {{ form.cidade }}
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">UF</label>
+                    {{ form.uf }}
+                </div>
+            </div>
+        </div>
+
+        <!-- SEÇÃO 4: OBSERVAÇÕES -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Observações Internas (Restrições, Preferências, Histórico)</label>
+            {{ form.observacoes }}
+        </div>
+        
+        <!-- BOTÕES -->
+        <div class="flex gap-4">
+            <a href="{% url 'lista_hospedes' %}" class="flex-1 text-center py-4 bg-white text-slate-500 font-bold rounded-2xl border border-slate-200 hover:bg-slate-50 transition">
+                CANCELAR
+            </a>
+            <button type="submit" class="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition">
+                SALVAR CADASTRO
+            </button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Importando jQuery e Mask Plugin para as máscaras de digitação -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+<script>
+    $(document).ready(function(){
+        // 1. Aplicação das Máscaras
+        // Procura pelos campos e aplica a máscara independente do 'type'
+        $('input[name="data_nascimento"]').attr('type', 'text').mask('00/00/0000');
+        $('input[name="cpf"]').mask('000.000.000-00');
+        $('input[name="cnpj"]').mask('00.000.000/0000-00');
+        $('input[name="cep"]').mask('00000-000');
+        $('input[name="celular"]').mask('(00) 00000-0000');
+        $('input[name="telefone_fixo"]').mask('(00) 0000-0000');
+
+        // 2. Lógica para Alternar entre PF e PJ
+        function togglePessoa() {
+            const tipo = $('select[name="tipo_pessoa"]').val();
+            if (tipo === 'PJ') {
+                $('.div-pf').addClass('hidden');
+                $('.div-pj').removeClass('hidden');
+            } else {
+                $('.div-pf').removeClass('hidden');
+                $('.div-pj').addClass('hidden');
+            }
+        }
+
+        // Executa ao carregar e ao mudar o select
+        togglePessoa();
+        $('select[name="tipo_pessoa"]').change(function() {
+            togglePessoa();
+        });
+
+        // 3. Script básico para CEP automático (Opcional, mas profissional)
+        $('input[name="cep"]').blur(function() {
+            var cep = $(this).val().replace(/\D/g, '');
+            if (cep != "") {
+                var validacep = /^[0-9]{8}$/;
+                if(validacep.test(cep)) {
+                    $.getJSON("https://viacep.com.br/ws/"+ cep +"/json/?callback=?", function(dados) {
+                        if (!("erro" in dados)) {
+                            $('input[name="logradouro"]').val(dados.logradouro);
+                            $('input[name="bairro"]').val(dados.bairro);
+                            $('input[name="cidade"]').val(dados.localidade);
+                            $('input[name="uf"]').val(dados.uf);
+                            $('input[name="numero"]').focus();
+                        }
+                    });
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

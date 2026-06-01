@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ titulo_relatorio }}</title>
+    <style>
+        @media print {
+            .no-print { display: none; }
+            body { background-color: #fff; }
+        }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 11px; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        /* Cabeçalho do Relatório */
+        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 18px; color: #1a202c; text-transform: uppercase; }
+        .info-empresa { text-align: right; }
+        
+        /* Filtros Aplicados */
+        .filtros { background: #f7fafc; padding: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px; border-radius: 4px; }
+        .filtros strong { color: #4a5568; }
+
+        /* Tabela */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #e2e8f0; padding: 6px 8px; text-align: left; }
+        th { background-color: #edf2f7 !important; color: #2d3748; font-weight: bold; text-transform: uppercase; font-size: 10px; }
+        
+        tr:nth-child(even) { background-color: #f8fafc; }
+        
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: bold; }
+
+        /* Rodapé de Totais */
+        .total-box { margin-top: 20px; text-align: right; border-top: 2px solid #444; padding-top: 10px; }
+        .total-box span { font-size: 14px; font-weight: black; }
+
+        .footer { margin-top: 30px; text-align: center; font-size: 9px; color: #a0aec0; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="no-print" style="text-align: right; margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 8px 16px; background: #2d3748; color: white; border: none; border-radius: 4px; cursor: pointer;">🖨️ Imprimir Relatório</button>
+    </div>
+
+    <div class="header">
+        <div>
+            <h1>{{ titulo_relatorio }}</h1>
+            <p>Emissão: {% now "d/m/Y H:i" %}</p>
+        </div>
+        <div class="info-empresa">
+            <h2 style="margin:0; font-size: 14px;">{{ empresa.nome }}</h2>
+            <p style="margin:2px 0;">CNPJ: {{ empresa.cnpj }}</p>
+        </div>
+    </div>
+
+    <div class="filtros">
+        <strong>PERÍODO:</strong> {{ data_ini|date:"d/m/Y"|default:"Início" }} até {{ data_fim|date:"d/m/Y"|default:"Fim" }} |
+        <strong>SITUAÇÃO:</strong> {{ status_filtro|default:"TODOS" }}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th width="80">Vencimento</th>
+                <th>Favorecido (Cliente/Func)</th>
+                <th width="100">Documento / NF</th>
+                <th>Descrição / Plano de Contas</th>
+                <th width="100" class="text-right">Valor (R$)</th>
+                <th width="80" class="text-center">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in contas %}
+            <tr>
+                <td class="text-center">{{ c.data_vencimento|date:"d/m/Y" }}</td>
+                <td>
+                    {% if c.tipo_favorecido == 'FUNCIONARIO' %}
+                        {{ c.funcionario.nome_completo }} (F)
+                    {% else %}
+                        {{ c.cadastro.nome }}
+                    {% endif %}
+                </td>
+                <!-- COLUNA DO DOCUMENTO ADICIONADA -->
+                <td class="text-center font-bold">
+                    {{ c.documento|default:"---" }}
+                </td>
+                <td>
+                    <span class="font-bold">{{ c.descricao }}</span><br>
+                    <small style="color: #718096;">{{ c.plano_de_contas.nome }}</small>
+                </td>
+                <td class="text-right font-bold">
+                    {{ c.valor|floatformat:2 }}
+                </td>
+                <td class="text-center">
+                    {% if c.status == 'PAGA' %}PAGO{% else %}ABERTO{% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">Nenhum registro encontrado para os filtros selecionados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-box">
+        <strong>TOTAL GERAL:</strong> 
+        <span class="font-bold">R$ {{ total_valor|floatformat:2 }}</span>
+    </div>
+
+    <div class="footer">
+        Gerado por e-Gerente Serviços - Sistema de Gestão SaaS
+    </div>
+</div>
+
+</body>
+</html>

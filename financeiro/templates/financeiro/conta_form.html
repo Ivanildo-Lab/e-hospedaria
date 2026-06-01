@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    /* Estilo dos checkboxes */
+    input[type="checkbox"] {
+        width: 1.2rem;
+        height: 1.2rem;
+        accent-color: #3b82f6;
+        cursor: pointer;
+    }
+    /* Impede que o input de arquivo apareça como texto feio */
+    #id_arquivo {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto bg-white rounded shadow border-t-4 {% if 'Recebimento' in titulo or form.instance.tipo == 'RECEBER' %}border-green-500{% else %}border-red-500{% endif %} p-6">
+    
+    <!-- IMPORTANTE: Adicionado enctype para o upload de arquivos e novalidate para gerenciar erros pelo Django -->
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        
+        <!-- BLOCO DE ERROS DETALHADO (Caso falte algo, o Django avisará aqui) -->
+        {% if form.errors %}
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 shadow-sm">
+            <p class="text-sm text-red-700 font-bold mb-2 uppercase">Atenção: Corrija os campos abaixo</p>
+            <ul class="text-xs text-red-600 list-disc ml-5">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- LINHA 1: DESCRIÇÃO E CATEGORIA -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
+            <div class="md:col-span-8">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Descrição do Lançamento</label>
+                {{ form.descricao }}
+            </div>
+            <div class="md:col-span-4">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Categoria (Plano de Contas)</label>
+                {{ form.plano_de_contas }}
+            </div>
+        </div>
+
+        <!-- LINHA 2: FAVORECIDO (LOGICA DINÂMICA) -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6 bg-gray-50 p-4 rounded border border-gray-200">
+            <div class="md:col-span-3">
+                <label class="block text-[10px] font-bold text-blue-600 uppercase mb-1">Tipo de Favorecido</label>
+                {{ form.tipo_favorecido }}
+            </div>
+
+            <div class="md:col-span-9" id="box_cadastro">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cliente / Fornecedor</label>
+                {{ form.cadastro }}
+            </div>
+
+            <div class="md:col-span-9 hidden" id="box_funcionario">
+                <label class="block text-[10px] font-bold text-indigo-600 uppercase mb-1"><i class="fa fa-user-tie"></i> Funcionário do RH</label>
+                {{ form.funcionario }}
+            </div>
+        </div>
+
+        <!-- LINHA 3: VALORES E DATAS -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
+            <div class="md:col-span-4">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Data de Vencimento</label>
+                {{ form.data_vencimento }}
+            </div>
+
+            <div class="md:col-span-4">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Valor Total</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">R$</div>
+                    <input type="number" name="valor" step="0.01" class="pl-10 w-full border border-gray-300 rounded p-2 text-sm shadow-sm" id="id_valor" value="{{ form.valor.value|default:''|stringformat:'.2f' }}">
+                </div>
+            </div>
+
+            <div class="md:col-span-4">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Status</label>
+                {{ form.status }}
+            </div>
+        </div>
+
+        <!-- SEÇÃO DE PARCELAMENTO -->
+        {% if not form.instance.pk %}
+        <div class="bg-blue-50/50 p-4 rounded-lg border border-blue-100 mb-6">
+            <div class="flex items-center space-x-3 mb-4">
+                {{ form.gerar_parcelas }}
+                <label for="{{ form.gerar_parcelas.id_for_label }}" class="text-sm font-bold text-gray-700 cursor-pointer select-none">
+                    Deseja parcelar este valor?
+                </label>
+            </div>
+
+            <div id="area-parcelas" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
+                <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Qtd. Parcelas</label>{{ form.qtd_parcelas }}</div>
+                <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Juros Mensal (%)</label>{{ form.taxa_juros }}</div>
+                <div class="bg-white p-2 rounded border border-blue-200 flex flex-col justify-center items-center">
+                    <span class="text-[9px] text-blue-600 font-bold uppercase">Valor da Parcela</span>
+                    <span class="text-lg font-black text-blue-800" id="preview-parcela">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- OBSERVAÇÕES, DOCUMENTO E ANEXO -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
+            <div class="md:col-span-6">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Observações Internas</label>
+                {{ form.observacoes }}
+            </div>
+            
+            <div class="md:col-span-3">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nº Documento / NF</label>
+                {{ form.documento }}
+                <p class="text-[9px] text-gray-400 mt-1 italic">Número da Nota ou Recibo</p>
+            </div>
+
+            <div class="md:col-span-3 text-center">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Comprovante / Anexo</label>
+                <label for="{{ form.arquivo.auto_id }}" class="cursor-pointer group block">
+                    <div class="h-20 w-full bg-gray-50 border-2 border-dashed border-gray-300 rounded flex flex-col items-center justify-center overflow-hidden hover:border-blue-500 transition relative">
+                        <div id="anexo-placeholder" class="text-center">
+                            {% if form.instance.arquivo %}
+                                <i class="fa fa-file-invoice-dollar text-xl text-blue-500"></i>
+                                <span class="text-[8px] font-bold text-blue-600 block uppercase">Ver Arquivo Atual</span>
+                            {% else %}
+                                <i class="fa fa-cloud-upload-alt text-xl text-gray-300 group-hover:text-blue-400"></i>
+                                <span class="text-[8px] text-gray-400 block uppercase">Anexar Arquivo</span>
+                            {% endif %}
+                        </div>
+                        <!-- Preview para imagens -->
+                        <img id="anexo-preview" class="hidden w-full h-full object-cover absolute inset-0">
+                    </div>
+                    {{ form.arquivo }}
+                </label>
+            </div>
+        </div>
+
+        <!-- BOTÕES DE AÇÃO -->
+        <div class="flex justify-end space-x-3 pt-6 border-t border-gray-100">
+            <button type="button" onclick="window.history.back()" class="px-8 py-2 bg-gray-100 text-gray-600 rounded font-bold hover:bg-gray-200 transition">CANCELAR</button>
+            <button type="submit" class="px-12 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 shadow-lg transition">
+                <i class="fa fa-save mr-2"></i> SALVAR LANÇAMENTO
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- 1. LÓGICA DO FAVORECIDO ---
+        const selectFavorecido = document.getElementById('id_tipo_favorecido');
+        const boxCadastro = document.getElementById('box_cadastro');
+        const boxFuncionario = document.getElementById('box_funcionario');
+        const inputCadastro = document.getElementById('id_cadastro');
+        const inputFuncionario = document.getElementById('id_funcionario');
+
+        function atualizarFavorecido() {
+            if (selectFavorecido.value === 'FUNCIONARIO') {
+                boxCadastro.classList.add('hidden');
+                boxFuncionario.classList.remove('hidden');
+                // Se o seu select do Django for opcional, limpamos o outro valor
+                if (inputCadastro) inputCadastro.selectedIndex = 0;
+            } else {
+                boxCadastro.classList.remove('hidden');
+                boxFuncionario.classList.add('hidden');
+                if (inputFuncionario) inputFuncionario.selectedIndex = 0;
+            }
+        }
+        if (selectFavorecido) {
+            selectFavorecido.addEventListener('change', atualizarFavorecido);
+            atualizarFavorecido();
+        }
+
+        // --- 2. LÓGICA DE PARCELAMENTO ---
+        const checkParcelar = document.getElementById('id_gerar_parcelas');
+        const areaParcelas = document.getElementById('area-parcelas');
+        const inputValor = document.getElementById('id_valor');
+        const inputQtd = document.getElementById('id_qtd_parcelas');
+        const inputJuros = document.getElementById('id_taxa_juros');
+        const displayParcela = document.getElementById('preview-parcela');
+
+        function calcular() {
+            if (!checkParcelar.checked) return;
+            let v = parseFloat(inputValor.value) || 0;
+            let q = parseInt(inputQtd.value) || 1;
+            let j = parseFloat(inputJuros.value) || 0;
+            let total = v + (v * (j / 100));
+            let valorParcela = total / q;
+            displayParcela.textContent = "R$ " + valorParcela.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        if (checkParcelar) {
+            checkParcelar.addEventListener('change', () => {
+                areaParcelas.classList.toggle('hidden', !checkParcelar.checked);
+                calcular();
+            });
+            [inputValor, inputQtd, inputJuros].forEach(el => {
+                if(el) el.addEventListener('input', calcular);
+            });
+        }
+
+        // --- 3. PREVIEW DO ANEXO ---
+        const inputArquivo = document.getElementById('id_arquivo');
+        if (inputArquivo) {
+            inputArquivo.onchange = function() {
+                const [file] = this.files;
+                if (file) {
+                    const preview = document.getElementById('anexo-preview');
+                    const placeholder = document.getElementById('anexo-placeholder');
+                    if (file.type.startsWith('image/')) {
+                        preview.src = URL.createObjectURL(file);
+                        preview.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                    } else {
+                        placeholder.innerHTML = '<i class="fa fa-file-pdf text-2xl text-green-500 animate-pulse"></i><br><span class="text-[8px] font-bold text-green-600 uppercase">Documento Selecionado</span>';
+                        preview.classList.add('hidden');
+                        placeholder.classList.remove('hidden');
+                    }
+                }
+            };
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso | e-Hotelaria SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .login-bg {
+            background-image: url("{% static 'img/fundo-hotel.jpg' %}");
+            background-size: cover;
+            background-position: center;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="login-bg h-screen w-full flex items-center justify-center font-sans">
+    <div class="absolute inset-0 bg-slate-900/50"></div>
+
+    <div class="relative w-full max-w-md p-6">
+        <div class="glass-card rounded-3xl shadow-2xl p-10">
+            <div class="text-center mb-10">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-blue-600 text-white mb-4 shadow-xl transform -rotate-6">
+                    <i class="fa fa-hotel text-3xl"></i>
+                </div>
+                <h2 class="text-3xl font-black text-slate-800 tracking-tighter">e-Hotelaria</h2>
+                <p class="text-slate-500 mt-2 text-sm font-medium">Gestão de Hospedagem & Financeiro</p>
+            </div>
+
+            <form method="post" class="space-y-5">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div class="bg-red-100 border-l-4 border-red-500 p-3 rounded text-red-700 text-xs font-bold">
+                    Usuário ou senha inválidos.
+                </div>
+                {% endif %}
+
+                <div>
+                    <label class="block text-xs font-black text-slate-500 uppercase ml-1 mb-1">Usuário</label>
+                    <div class="relative">
+                        <i class="fa fa-user absolute left-4 top-3.5 text-slate-400"></i>
+                        <input type="text" name="username" class="w-full pl-12 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Seu usuário">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black text-slate-500 uppercase ml-1 mb-1">Senha</label>
+                    <div class="relative">
+                        <i class="fa fa-lock absolute left-4 top-3.5 text-slate-400"></i>
+                        <input type="password" name="password" class="w-full pl-12 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all transform hover:-translate-y-1">
+                    ENTRAR NO SISTEMA
+                </button>
+            </form>
+
+            <div class="mt-10 text-center border-t border-slate-200 pt-6">
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                    &copy; {% now "Y" %} e-Hotelaria SaaS Professional
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

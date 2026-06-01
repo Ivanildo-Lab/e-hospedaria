@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="p-6 border-b flex justify-between items-center">
+        <h3 class="font-bold text-slate-800 uppercase text-xs tracking-widest">Categorias e Tarifas</h3>
+        <a href="{% url 'hotel:nova_categoria' %}" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold">+ NOVA</a>
+    </div>
+    <table class="w-full text-left">
+        <thead class="bg-slate-50 text-[10px] font-black uppercase text-slate-400">
+            <tr><th class="px-6 py-4">Nome</th><th class="px-6 py-4">Diária</th><th class="px-6 py-4">Hora</th></tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+            {% for c in categorias %}
+            <tr class="text-sm">
+                <td class="px-6 py-4 font-bold">{{ c.nome }}</td>
+                <td class="px-6 py-4 text-emerald-600 font-bold">R$ {{ c.preco_diaria }}</td>
+                <td class="px-6 py-4 text-blue-600 font-bold">R$ {{ c.preco_hora }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

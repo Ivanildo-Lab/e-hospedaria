@@ -1,0 +1,59 @@
+from django.db import models
+from core.models import ModeloSaaS
+from cadastros.models import Cadastro
+from django.utils import timezone
+
+class CategoriaQuarto(ModeloSaaS):
+    nome = models.CharField(max_length=100)
+    preco_diaria = models.DecimalField(max_digits=10, decimal_places=2)
+    preco_hora = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return self.nome
+
+class Quarto(ModeloSaaS):
+    STATUS_CHOICES = [
+        ('DISPONIVEL', 'Disponível'),
+        ('OCUPADO', 'Ocupado'),
+        ('LIMPEZA', 'Limpeza'),
+        ('MANUTENCAO', 'Manutenção'),
+    ]
+    numero = models.CharField(max_length=10)
+    categoria = models.ForeignKey(CategoriaQuarto, on_delete=models.PROTECT)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DISPONIVEL')
+
+    def hospedagem_atual(self):
+        return self.hospedagem_set.filter(ativa=True).first()
+    
+    def __str__(self):
+        return f"Quarto {self.numero}"
+
+class Hospedagem(ModeloSaaS):
+    TIPO_CHOICES = [('DIARIA', 'Diária'), ('HORA', 'Hora')]
+    
+    quarto = models.ForeignKey(Quarto, on_delete=models.PROTECT)
+    hospede = models.ForeignKey(Cadastro, on_delete=models.PROTECT, limit_choices_to={'papel': 'HOSPEDE'})
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='DIARIA')
+    data_entrada = models.DateTimeField(default=timezone.now)
+    data_saida = models.DateTimeField(null=True, blank=True)
+    ativa = models.BooleanField(default=True)
+
+    def save(self, *args, **kwargs):
+        # Ao salvar um novo check-in, o quarto fica OCUPADO
+        if not self.pk:
+            self.quarto.status = 'OCUPADO'
+            self.quarto.save()
+        super().save(*args, **kwargs)
+
+# hotel/models.py
+
+class ConsumoHospedagem(ModeloSaaS):
+    hospedagem = models.ForeignKey(Hospedagem, on_delete=models.CASCADE, related_name='consumos')
+    produto = models.ForeignKey('estoque.Produto', on_delete=models.PROTECT)
+    quantidade = models.IntegerField(default=1)
+    valor_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        self.total = self.quantidade * self.valor_unitario
+        super().save(*args, **kwargs)

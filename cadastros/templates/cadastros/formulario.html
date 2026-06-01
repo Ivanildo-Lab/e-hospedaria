@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block titulo_cabecalho %}
+    {% if form.instance.pk %}Editar Cadastro{% else %}Novo Cadastro{% endif %}
+{% endblock %}
+{% block subtitulo_cabecalho %}Dados completos do cliente/fornecedor{% endblock %}
+{% block breadcrumb %}Formulário{% endblock %}
+
+{% block content %}
+<form role="form" method="post" enctype="multipart/form-data" id="cadastroForm">
+    {% csrf_token %}
+    
+    <!-- Erros -->
+    {% if form.errors %}
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0"><i class="fa fa-exclamation-circle text-red-500"></i></div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">Erros encontrados:</h3>
+                <ul class="list-disc list-inside text-sm text-red-700 mt-1">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li><b>{{ field|capfirst }}:</b> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- COLUNA PRINCIPAL -->
+        <div class="lg:col-span-9 space-y-6">
+            
+            <!-- CAIXA 1: IDENTIFICAÇÃO (Dinâmica) -->
+            <div class="bg-white rounded shadow border-t-4 border-blue-500">
+                <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-700">Identificação</h3>
+                    
+                    <!-- TIPO DE PESSOA (Toggle) -->
+                    <div class="w-48">
+                        {{ form.tipo_pessoa }}
+                    </div>
+                </div>
+                
+                <div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-4">
+                    
+                    <!-- LINHA 1: CPF SEPARADO DO CNPJ -->
+                    <div class="md:col-span-4 pf-field">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+                        {{ form.cpf }}
+                    </div>
+                    
+                    <div class="md:col-span-4 pj-field hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">CNPJ</label>
+                        {{ form.cnpj }}
+                    </div>
+                    
+                    <!-- Checkbox Produtor Rural -->
+                    <div class="md:col-span-4 flex items-end pb-3" id="div_rural">
+                        <div class="flex items-center h-5">
+                            {{ form.is_produtor_rural }}
+                            <label for="id_is_produtor_rural" class="ml-2 block text-sm text-gray-900">
+                                Produtor Rural? <span class="text-gray-500 text-xs">(Possui I.E.)</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    {% if form.categoria %}
+                    <div class="md:col-span-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.categoria.label }}</label>
+                        {{ form.categoria }}
+                    </div>
+                    {% else %}
+                    <div class="md:col-span-4"></div> 
+                    {% endif %}
+                    
+                    <!-- LINHA 2: NOMES -->
+                    <div class="md:col-span-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl_nome">Nome Completo</label>
+                        {{ form.nome }}
+                    </div>
+                    
+                    <!-- Razão Social (Só PJ) -->
+                    <div class="md:col-span-6 pj-field hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Razão Social</label>
+                        {{ form.razao_social }}
+                    </div>
+
+                    <!-- LINHA 3: DOCUMENTOS SECUNDÁRIOS -->
+                    <div class="md:col-span-4 pf-field">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">RG</label>
+                        {{ form.rg }}
+                    </div>
+                    
+                    <div class="md:col-span-4 pf-field">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
+                        {{ form.data_nascimento }}
+                    </div>
+
+                    <!-- Inscrição Estadual (PJ ou Rural) -->
+                    <div class="md:col-span-4 hidden" id="div_ie">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Inscrição Estadual</label>
+                        {{ form.inscricao_estadual }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- CAIXA 2: CONTATO E ENDEREÇO -->
+            <div class="bg-white rounded shadow border-t-4 border-cyan-500">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-700">Contato e Endereço</h3>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div class="md:col-span-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.email.label }}</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.celular.label }}</label>
+                        {{ form.celular }}
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.telefone_fixo.label }}</label>
+                        {{ form.telefone_fixo }}
+                    </div>
+
+                    <!-- Endereço -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.cep.label }}</label>
+                        {{ form.cep }}
+                    </div>
+                    <div class="md:col-span-7">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.logradouro.label|default:"Rua/Av" }}</label>
+                        {{ form.logradouro }}
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.numero.label|default:"Número" }}</label>
+                        {{ form.numero }}
+                    </div>
+                    <div class="md:col-span-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.complemento.label|default:"Complemento" }}</label>
+                        {{ form.complemento }}
+                    </div>
+                    <div class="md:col-span-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.bairro.label }}</label>
+                        {{ form.bairro }}
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.cidade.label }}</label>
+                        {{ form.cidade }}
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.uf.label }}</label>
+                        {{ form.uf }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- CAIXA 3: OBSERVAÇÕES -->
+            <div class="bg-white rounded shadow border-t-4 border-gray-400">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-700">Observações</h3>
+                </div>
+                <div class="p-6">
+                    {{ form.observacoes }}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- COLUNA LATERAL -->
+        <div class="lg:col-span-3 space-y-6">
+            <!-- CAIXA FOTO -->
+            <div class="bg-white rounded shadow border-t-4 border-green-500">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-700">Logo / Foto</h3>
+                </div>
+                <div class="p-6 text-center">
+                    <div class="mb-4 flex justify-center">
+                        {% if form.instance.foto %}
+                            <img id="foto-preview" src="{{ form.instance.foto.url }}" class="h-48 w-auto object-cover rounded border p-1 border-gray-200 shadow-sm">
+                        {% else %}
+                            <div id="foto-placeholder" class="h-48 w-40 bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 flex-col rounded">
+                                <i class="fa fa-camera text-4xl mb-2"></i>
+                                <span class="text-xs">Sem Imagem</span>
+                            </div>
+                            <img id="foto-preview" class="hidden h-48 w-auto object-cover rounded border p-1 border-gray-200 shadow-sm">
+                        {% endif %}
+                    </div>
+                    <label class="block">
+                        <span class="sr-only">Escolher foto</span>
+                        <input type="file" name="foto" id="id_foto" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"/>
+                    </label>
+                </div>
+            </div>
+
+            <!-- CAIXA DADOS SISTEMA -->
+            <div class="bg-white rounded shadow border-t-4 border-red-500">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-700">Controle</h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.num_registro.label }}</label>
+                        {{ form.num_registro }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTÕES -->
+    <div class="mt-6 bg-white p-4 rounded shadow border-t border-gray-200 flex justify-start space-x-4">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition">
+            <i class="fa fa-save mr-2"></i> Salvar
+        </button>
+        <a href="{% url url_cancelar|default:'lista_hospedes' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded shadow transition">
+            Cancelar
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<!-- Importando jQuery e Mask Plugin -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // --- LÓGICA DE MÁSCARAS (ATUALIZADA) ---
+    $('#id_cpf').mask('000.000.000-00', {reverse: true});
+    $('#id_cnpj').mask('00.000.000/0000-00', {reverse: true});
+    $('#id_cep').mask('00000-000');
+    
+    // Máscara inteligente para Celular (8 ou 9 dígitos)
+    var celBehavior = function (val) {
+        return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
+    },
+    celOptions = {
+        onKeyPress: function (val, e, field, options) {
+            field.mask(celBehavior.apply({}, arguments), options);
+        }
+    };
+    $('#id_celular').mask(celBehavior, celOptions);
+    $('#id_telefone_fixo').mask('(00) 0000-0000');
+
+    // --- LÓGICA DE PF / PJ / RURAL ---
+    const selectTipo = $('#id_tipo_pessoa');
+    const checkRural = $('#id_is_produtor_rural');
+    
+    const divRural = $('#div_rural');
+    const divIE = $('#div_ie');
+    const pfFields = $('.pf-field'); 
+    const pjFields = $('.pj-field'); 
+    const lblNome = $('#lbl_nome');
+
+    function atualizarTela() {
+        const tipo = selectTipo.val();
+        
+        if (tipo === 'PJ') {
+            lblNome.text("Nome Fantasia");
+            pfFields.hide(); 
+            divRural.hide(); 
+            pjFields.show(); 
+            divIE.show();    
+        } else {
+            lblNome.text("Nome Completo");
+            pjFields.hide(); 
+            pfFields.show(); 
+            divRural.show(); 
+            
+            if (checkRural.is(':checked')) {
+                divIE.show();
+            } else {
+                divIE.hide();
+            }
+        }
+    }
+
+    // Eventos
+    selectTipo.change(atualizarTela);
+    checkRural.change(atualizarTela);
+    
+    // Inicializa a tela com o valor que veio do banco
+    atualizarTela();
+
+    // Preview de Foto
+    $('#id_foto').change(function(event) {
+        if (this.files && this.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('#foto-preview').attr('src', e.target.result).removeClass('hidden');
+                $('#foto-placeholder').addClass('hidden');
+            }
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+});
+</script>
+{% endblock %}

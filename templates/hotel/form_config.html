@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-xl mx-auto bg-white rounded-3xl shadow-sm border p-8">
+    <h3 class="text-xl font-black text-slate-800 mb-6">{{ titulo }}</h3>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="flex gap-4 mt-8">
+            <button type="submit" class="flex-1 py-4 bg-blue-600 text-white font-bold rounded-xl shadow-lg transition hover:bg-blue-700">SALVAR</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
