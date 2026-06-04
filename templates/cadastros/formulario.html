@@ -11,7 +11,7 @@
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 grid grid-cols-1 md:grid-cols-12 gap-6">
             <div class="md:col-span-12 border-b pb-4 mb-2">
                 <h3 class="font-black text-slate-700 uppercase text-xs tracking-widest flex items-center gap-2">
-                    <i class="fa fa-address-card text-blue-500"></i> Identificação do Hóspede / Empresa
+                    <i class="fa fa-address-card text-blue-500"></i> Identificação do Cadastro
                 </h3>
             </div>
             
@@ -25,12 +25,12 @@
                 {{ form.tipo_pessoa }}
             </div>
             
-            <div class="md:col-span-3">
-                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Papel do Cadastro</label>
+            <!-- O campo papel só aparece se não for modo fornecedor (onde ele é hidden) -->
+            <div class="md:col-span-3 {% if form.papel.is_hidden %} hidden {% endif %}">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Papel</label>
                 {{ form.papel }}
             </div>
             
-            <!-- Campos com Máscara -->
             <div class="md:col-span-3 div-pf">
                 <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">CPF</label>
                 {{ form.cpf }}
@@ -52,7 +52,8 @@
             </div>
         </div>
 
-        <!-- HOTELARIA E CONVÊNIO -->
+        <!-- SEÇÃO OCULTA: SÓ APARECE PARA HÓSPEDES (Se o campo 'profissao' existir no form) -->
+        {% if form.profissao %}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Dados FNRH -->
             <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 space-y-4">
@@ -93,12 +94,13 @@
                     {{ form.categoria }}
                 </div>
                 <p class="text-[10px] text-blue-600/60 italic leading-tight">
-                    * Vincule hóspedes a empresas para gerar cobranças unificadas no final do período.
+                    * Vincule hóspedes a empresas para gerar cobranças unificadas.
                 </p>
             </div>
         </div>
+        {% endif %}
 
-        <!-- SEÇÃO 3: CONTATO E LOCALIZAÇÃO -->
+        <!-- SEÇÃO 3: CONTATO E LOCALIZAÇÃO (Comum a ambos) -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
             <h3 class="font-black text-slate-700 uppercase text-[10px] tracking-widest mb-6 flex items-center gap-2 border-b pb-4">
                 <i class="fa fa-map-marker-alt text-blue-500"></i> Contato e Localização
@@ -146,15 +148,13 @@
             </div>
         </div>
 
-        <!-- SEÇÃO 4: OBSERVAÇÕES -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
-            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Observações Internas (Restrições, Preferências, Histórico)</label>
+            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Observações Internas</label>
             {{ form.observacoes }}
         </div>
         
-        <!-- BOTÕES -->
         <div class="flex gap-4">
-            <a href="{% url 'lista_hospedes' %}" class="flex-1 text-center py-4 bg-white text-slate-500 font-bold rounded-2xl border border-slate-200 hover:bg-slate-50 transition">
+            <a href="{% url url_cancelar|default:'lista_hospedes' %}" class="flex-1 text-center py-4 bg-white text-slate-500 font-bold rounded-2xl border border-slate-200 hover:bg-slate-50 transition">
                 CANCELAR
             </a>
             <button type="submit" class="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition">
@@ -163,18 +163,14 @@
         </div>
     </form>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
-<!-- Importando jQuery e Mask Plugin para as máscaras de digitação -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-
 <script>
     $(document).ready(function(){
-        // 1. Aplicação das Máscaras
-        // Procura pelos campos e aplica a máscara independente do 'type'
+        // Máscaras
         $('input[name="data_nascimento"]').attr('type', 'text').mask('00/00/0000');
         $('input[name="cpf"]').mask('000.000.000-00');
         $('input[name="cnpj"]').mask('00.000.000/0000-00');
@@ -182,40 +178,30 @@
         $('input[name="celular"]').mask('(00) 00000-0000');
         $('input[name="telefone_fixo"]').mask('(00) 0000-0000');
 
-        // 2. Lógica para Alternar entre PF e PJ
         function togglePessoa() {
             const tipo = $('select[name="tipo_pessoa"]').val();
             if (tipo === 'PJ') {
-                $('.div-pf').addClass('hidden');
-                $('.div-pj').removeClass('hidden');
+                $('.div-pf').addClass('hidden'); $('.div-pj').removeClass('hidden');
             } else {
-                $('.div-pf').removeClass('hidden');
-                $('.div-pj').addClass('hidden');
+                $('.div-pf').removeClass('hidden'); $('.div-pj').addClass('hidden');
             }
         }
-
-        // Executa ao carregar e ao mudar o select
         togglePessoa();
-        $('select[name="tipo_pessoa"]').change(function() {
-            togglePessoa();
-        });
+        $('select[name="tipo_pessoa"]').change(togglePessoa);
 
-        // 3. Script básico para CEP automático (Opcional, mas profissional)
+        // CEP Automático
         $('input[name="cep"]').blur(function() {
             var cep = $(this).val().replace(/\D/g, '');
-            if (cep != "") {
-                var validacep = /^[0-9]{8}$/;
-                if(validacep.test(cep)) {
-                    $.getJSON("https://viacep.com.br/ws/"+ cep +"/json/?callback=?", function(dados) {
-                        if (!("erro" in dados)) {
-                            $('input[name="logradouro"]').val(dados.logradouro);
-                            $('input[name="bairro"]').val(dados.bairro);
-                            $('input[name="cidade"]').val(dados.localidade);
-                            $('input[name="uf"]').val(dados.uf);
-                            $('input[name="numero"]').focus();
-                        }
-                    });
-                }
+            if (cep.length === 8) {
+                $.getJSON("https://viacep.com.br/ws/"+ cep +"/json/", function(dados) {
+                    if (!("erro" in dados)) {
+                        $('input[name="logradouro"]').val(dados.logradouro);
+                        $('input[name="bairro"]').val(dados.bairro);
+                        $('input[name="cidade"]').val(dados.localidade);
+                        $('input[name="uf"]').val(dados.uf);
+                        $('input[name="numero"]').focus();
+                    }
+                });
             }
         });
     });

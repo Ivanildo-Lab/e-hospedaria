@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Recibo de Hospedagem - {{ empresa.nome }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @media print { 
+            .no-print { display: none !important; } 
+            body { background-color: white !important; padding: 0 !important; } 
+            .cupom { box-shadow: none !important; border: none !important; width: 100% !important; max-width: 100% !important; }
+        }
+        .cupom { max-width: 380px; font-family: 'Courier New', Courier, monospace; }
+        .dotted-border { border-bottom: 2px dashed #eee; }
+    </style>
+</head>
+<body class="bg-gray-200 p-5 flex flex-col items-center">
+
+    <!-- BOTÕES NO-PRINT -->
+    <div class="no-print mb-6 flex gap-3 w-full max-w-[380px]">
+        <a href="{% url 'hotel:mapa_quartos' %}" class="flex-1 bg-slate-800 text-white px-4 py-3 rounded-xl font-bold text-xs text-center hover:bg-black transition">
+            <i class="fa fa-arrow-left mr-2"></i> VOLTAR
+        </a>
+        <button onclick="window.print()" class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-xl font-bold text-xs hover:bg-blue-700 transition">
+            <i class="fa fa-print mr-2"></i> IMPRIMIR
+        </button>
+    </div>
+
+    <!-- ÁREA DO CUPOM -->
+    <div class="cupom bg-white p-8 shadow-2xl border border-gray-100 rounded-sm">
+        
+        <!-- LOGO E CABEÇALHO -->
+        <div class="flex flex-col items-center mb-6">
+            {% if empresa.logo %}
+                <img src="{{ empresa.logo.url }}" alt="Logo {{ empresa.nome }}" class="h-20 w-auto mb-3 object-contain">
+            {% else %}
+                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mb-3">
+                    <i class="fa fa-hotel text-3xl"></i>
+                </div>
+            {% endif %}
+            <h2 class="text-center font-black uppercase text-lg leading-tight tracking-tighter">{{ empresa.nome }}</h2>
+            <p class="text-center text-[10px] text-gray-500">CNPJ: {{ empresa.cnpj }}</p>
+            <p class="text-[9px] text-gray-400 mt-1 uppercase">Emitido em: {% now "d/m/Y H:i" %}</p>
+        </div>
+
+        <div class="dotted-border mb-4"></div>
+
+        <!-- DADOS DA HOSPEDAGEM -->
+        <div class="text-[11px] space-y-1 mb-4">
+            <p><strong>HOSPEDE:</strong> {{ hospedagem.hospede.nome|upper }}</p>
+            <p><strong>QUARTO.:</strong> {{ hospedagem.quarto.numero }} ({{ hospedagem.quarto.categoria.nome|upper }})</p>
+            <p><strong>ENTRADA:</strong> {{ hospedagem.data_entrada|date:"d/m/Y H:i" }}</p>
+            <p><strong>SAÍDA..:</strong> {{ hospedagem.data_saida|date:"d/m/Y H:i" }}</p>
+        </div>
+
+        <div class="dotted-border mb-4"></div>
+
+        <!-- EXTRATO DE CONSUMO -->
+        <h4 class="font-bold text-[10px] uppercase mb-2">Resumo da Conta</h4>
+        <table class="w-full text-[11px] mb-4">
+            <tbody class="divide-y divide-gray-50">
+                <tr>
+                    <td class="py-1 uppercase">Estadia Base ({{ hospedagem.get_tipo_display }})</td>
+                    <td class="py-1 text-right">R$ {{ hospedagem.valor_estadia|floatformat:2 }}</td>
+                </tr>
+                {% for item in consumos %}
+                <tr>
+                    <td class="py-1">{{ item.quantidade }}x {{ item.produto.nome|upper }}</td>
+                    <td class="py-1 text-right">R$ {{ item.total|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- TOTAL -->
+        <div class="bg-gray-50 p-3 flex justify-between items-center mb-6 border border-gray-100">
+            <span class="text-[10px] font-bold uppercase">Valor Final:</span>
+            <span class="text-lg font-black">R$ {{ hospedagem.valor_total|floatformat:2 }}</span>
+        </div>
+
+        <div class="dotted-border mb-4"></div>
+
+        <!-- PAGAMENTOS EFETUADOS -->
+        <h4 class="font-bold text-[10px] uppercase mb-2">Pagamentos Realizados</h4>
+        <div class="space-y-1 mb-8">
+            {% for pg in pagamentos %}
+            <div class="flex justify-between text-[11px]">
+                <span class="text-gray-600">{{ pg.descricao|upper }}</span>
+                <span class="font-bold text-slate-800">R$ {{ pg.valor|floatformat:2 }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- RODAPÉ FINAL -->
+        <div class="text-center pt-4 border-t border-gray-100">
+            <p class="text-[10px] font-bold uppercase tracking-widest">Obrigado pela preferência!</p>
+            <p class="text-[8px] text-gray-400 mt-2 italic">e-Hotelaria SaaS - Gestão Inteligente</p>
+        </div>
+    </div>
+
+    <!-- Script de auto-impressão -->
+    <script>
+        window.onload = function() {
+            // Pequeno delay para garantir que a logo e fontes carregaram antes de abrir a janela de impressão
+            setTimeout(function() {
+                window.print();
+            }, 800);
+        };
+    </script>
+</body>
+</html>

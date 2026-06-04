@@ -7,4 +7,7 @@ urlpatterns = [
     path('novo/', views.novo_hospede, name='novo_hospede'),
     path('editar/<int:pk>/', views.editar_cadastro, name='editar_cadastro'),
     path('excluir/<int:pk>/', views.excluir_cadastro, name='excluir_cadastro'),
+    path('fornecedores/', views.lista_fornecedores, name='lista_fornecedores'),
+    path('fornecedores/novo/', views.novo_fornecedor, name='novo_fornecedor'),
+    
 ]

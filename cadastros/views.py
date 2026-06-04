@@ -44,15 +44,29 @@ def novo_hospede(request):
 @login_required
 def editar_cadastro(request, pk):
     cadastro = get_object_or_404(Cadastro, pk=pk, empresa=request.user.empresa)
+    
+    # Verifica se é um fornecedor para ativar o modo simplificado
+    is_fornecedor = (cadastro.papel == 'FORNECEDOR')
+    
+    # Define para onde voltar ao cancelar
+    url_cancelar = 'lista_fornecedores' if is_fornecedor else 'lista_hospedes'
+
     if request.method == 'POST':
-        form = CadastroForm(request.POST, instance=cadastro, user=request.user)
+        # Passamos fornecedor_mode se for o caso, para manter a consistência no POST
+        form = CadastroForm(request.POST, instance=cadastro, user=request.user, fornecedor_mode=is_fornecedor)
         if form.is_valid():
             form.save()
             messages.success(request, f"Cadastro de {cadastro.nome} atualizado!")
-            return redirect('lista_hospedes')
+            return redirect(url_cancelar)
     else:
-        form = CadastroForm(instance=cadastro, user=request.user)
-    return render(request, 'cadastros/formulario.html', {'form': form, 'titulo': 'Editar Cadastro'})
+        # Passamos fornecedor_mode aqui para esconder os campos no GET (carregamento da tela)
+        form = CadastroForm(instance=cadastro, user=request.user, fornecedor_mode=is_fornecedor)
+    
+    return render(request, 'cadastros/formulario.html', {
+        'form': form, 
+        'titulo': 'Editar Fornecedor' if is_fornecedor else 'Editar Hóspede',
+        'url_cancelar': url_cancelar
+    })
 
 @login_required
 def excluir_cadastro(request, pk):
@@ -66,3 +80,31 @@ def excluir_cadastro(request, pk):
     
     # Se não for POST, volta para a lista (segurança)
     return redirect('lista_hospedes')
+
+# cadastros/views.py
+
+@login_required
+def lista_fornecedores(request):
+    # Busca apenas fornecedores ou cadastros com papel AMBOS (Hóspede + Fornecedor)
+    queryset = Cadastro.objects.filter(empresa=request.user.empresa, papel__in=['FORNECEDOR', 'AMBOS']).order_by('nome')
+    
+    q = request.GET.get('q')
+    if q:
+        queryset = queryset.filter(Q(nome__icontains=q) | Q(cpf_cnpj__icontains=q))
+        
+    return render(request, 'cadastros/lista_fornecedores.html', {'cadastros': queryset})
+
+@login_required
+def novo_fornecedor(request):
+    if request.method == 'POST':
+        # Passamos fornecedor_mode=True para o formulário
+        form = CadastroForm(request.POST, user=request.user, fornecedor_mode=True)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.empresa = request.user.empresa
+            obj.save()
+            messages.success(request, "Fornecedor cadastrado!")
+            return redirect('lista_fornecedores')
+    else:
+        form = CadastroForm(user=request.user, fornecedor_mode=True)
+    return render(request, 'cadastros/formulario.html', {'form': form, 'titulo': 'Novo Fornecedor'})

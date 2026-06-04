@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-xl mx-auto bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+    <div class="flex items-center gap-3 mb-6 border-b pb-4">
+        <div class="p-2 bg-blue-100 text-blue-600 rounded-lg"><i class="fa fa-tag"></i></div>
+        <h3 class="font-black text-slate-700 uppercase text-xs tracking-widest">{{ titulo }}</h3>
+    </div>
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <div>
+            <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">Tipo</label>
+            {{ form.tipo }}
+        </div>
+        <div>
+            <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">Nome do Item</label>
+            {{ form.nome }}
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">Custo (R$)</label>
+                {{ form.valor_custo }}
+            </div>
+            <div>
+                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">Venda (R$)</label>
+                {{ form.preco_venda }}
+            </div>
+        </div>
+        <div>
+            <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">Estoque Mínimo (Aviso)</label>
+            {{ form.estoque_minimo }}
+        </div>
+        <div class="flex gap-4 mt-8 pt-4 border-t">
+            <a href="{% url 'estoque:lista_produtos' %}" class="flex-1 text-center py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition">CANCELAR</a>
+            <button type="submit" class="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-lg hover:bg-blue-700 transition">SALVAR ITEM</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

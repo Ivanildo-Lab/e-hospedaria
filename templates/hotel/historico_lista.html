@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block titulo_cabecalho %}Histórico de Hospedagens{% endblock %}
+{% block subtitulo_cabecalho %}Consulta de estadias encerradas e segunda via de recibos{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+    
+    <!-- BARRA DE BUSCA -->
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center">
+        <form method="GET" class="flex flex-1 gap-3 w-full">
+            <div class="relative flex-1">
+                <i class="fa fa-search absolute left-4 top-3.5 text-slate-400 text-xs"></i>
+                <input type="text" name="q" value="{{ filtro_q|default:'' }}" placeholder="Buscar por hóspede ou quarto..." 
+                       class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none text-sm">
+            </div>
+            <button type="submit" class="bg-slate-800 text-white px-6 rounded-2xl text-xs font-bold hover:bg-black transition">FILTRAR</button>
+        </form>
+    </div>
+
+    <!-- TABELA -->
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                <tr>
+                    <th class="px-6 py-5">Quarto</th>
+                    <th class="px-6 py-5">Hóspede</th>
+                    <th class="px-6 py-5">Período</th>
+                    <th class="px-6 py-5 text-right">Valor Total</th>
+                    <th class="px-6 py-5 text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                {% for h in historico %}
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <span class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs">
+                            {{ h.quarto.numero }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-sm font-black text-slate-700">{{ h.hospede.nome }}</p>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase">{{ h.get_tipo_display }}</p>
+                    </td>
+                    <td class="px-6 py-4 text-[11px] text-slate-500">
+                        <div><b>IN:</b> {{ h.data_entrada|date:"d/m/y H:i" }}</div>
+                        <div><b>OUT:</b> {{ h.data_saida|date:"d/m/y H:i" }}</div>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <span class="text-sm font-black text-slate-800">R$ {{ h.valor_total|floatformat:2 }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <!-- LINK PARA REIMPRESSÃO -->
+                        <a href="{% url 'hotel:imprimir_comprovante' h.id %}" target="_blank" 
+                           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-bold text-[10px] hover:bg-blue-600 hover:text-white transition-all">
+                            <i class="fa fa-print"></i> REIMPRIMIR
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-20 text-center">
+                        <p class="text-slate-400 font-bold uppercase text-xs">Nenhuma estadia finalizada encontrada.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,3 +1,5 @@
+# financeiro/views.py
+from core.models import ParametroSistema
 from datetime import date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -6,8 +8,8 @@ from django.db.models import Sum
 from django.utils.dateparse import parse_date
 
 # Imports dos Modelos e Formulários
-from .models import Conta, Lancamento, Caixa, PlanoDeContas
-from .forms import ContaForm, LancamentoManualForm, CaixaForm, PlanoContasForm
+from .models import Conta, FormaPagamento, Lancamento, Caixa, PlanoDeContas
+from .forms import ContaForm, FormaPagamentoForm, LancamentoManualForm, CaixaForm, PlanoContasForm
 from core.models import ParametroSistema
 from decimal import Decimal
 import calendar
@@ -826,3 +828,54 @@ def relatorio_dre_sintetico(request):
         'resultado': resultado,
         'empresa': request.user.empresa,
     })
+@login_required
+def lista_formas_pagamento(request):
+    formas = FormaPagamento.objects.filter(empresa=request.user.empresa)
+    return render(request, 'financeiro/formas_pagamento_list.html', {'formas': formas})
+
+@login_required
+def nova_forma_pagamento(request):
+    if request.method == 'POST':
+        form = FormaPagamentoForm(request.POST)
+        if form.is_valid():
+            f = form.save(commit=False)
+            f.empresa = request.user.empresa
+            f.save()
+            messages.success(request, "Forma de pagamento cadastrada!")
+            return redirect('financeiro:lista_formas_pagamento')
+    else:
+        form = FormaPagamentoForm()
+    
+    # IMPORTANTE: Aponte para o novo template específico
+    return render(request, 'financeiro/formas_pagamento_form.html', {
+        'form': form, 
+        'titulo': 'Nova Forma de Pagamento'
+    })
+
+@login_required
+def lista_caixas(request):
+    caixas = Caixa.objects.filter(empresa=request.user.empresa)
+    
+    # Busca qual o ID do caixa padrão cadastrado nos parâmetros
+    caixa_padrao = ParametroSistema.objects.filter(empresa=request.user.empresa, chave='CAIXA_PADRAO_ID').first()
+    caixa_padrao_id = caixa_padrao.valor if caixa_padrao else None
+
+    return render(request, 'financeiro/caixa_list.html', {
+        'caixas': caixas,
+        'caixa_padrao_id': caixa_padrao_id
+    })
+
+@login_required
+def definir_caixa_padrao(request, id):
+    # Verifica se o caixa pertence à empresa
+    get_object_or_404(Caixa, id=id, empresa=request.user.empresa)
+    
+    # Atualiza ou Cria o parâmetro
+    obj, created = ParametroSistema.objects.update_or_create(
+        empresa=request.user.empresa,
+        chave='CAIXA_PADRAO_ID',
+        defaults={'valor': str(id)}
+    )
+    
+    messages.success(request, "Este agora é o seu caixa padrão para recebimentos!")
+    return redirect('financeiro:lista_caixas')

@@ -38,10 +38,21 @@
                 <a href="{% url 'hotel:mapa_quartos' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-th-large mr-3 w-5 text-emerald-500"></i> Mapa de Quartos
                 </a>
+                <a href="{% url 'hotel:historico_hospedagens' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
+                    <i class="fa fa-history mr-3 w-5 text-emerald-500"></i> Histórico Hospedagem/ Reimpressão
+                </a>
+                
                 <a href="{% url 'lista_hospedes' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-users mr-3 w-5 text-emerald-500"></i> Hóspedes
                 </a>
-
+                <!--  Logística e Compras -->
+                <p class="text-slate-500 text-[10px] uppercase font-black px-3 mt-6 mb-2 tracking-widest">Logística</p>
+                <a href="{% url 'lista_fornecedores' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
+                    <i class="fa fa-truck-moving mr-3 w-5 text-orange-400"></i> Fornecedores
+                </a>
+                <a href="{% url 'estoque:lista_produtos' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
+                    <i class="fa fa-boxes mr-3 w-5 text-orange-400"></i> Estoque / Serviços
+                </a>
                 <p class="text-slate-500 text-[10px] uppercase font-black px-3 mt-6 mb-2 tracking-widest">Financeiro</p>
                 <a href="{% url 'financeiro:lista_receber' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-arrow-up mr-3 w-5 text-green-500"></i> Recebimentos
@@ -52,7 +63,15 @@
                 <a href="{% url 'financeiro:fluxo_caixa' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-exchange-alt mr-3 w-5 text-amber-500"></i> Fluxo de Caixa
                 </a>
-
+                <a href="{% url 'financeiro:lista_plano_de_contas' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
+                    <i class="fa fa-list-ol mr-3 w-5 text-purple-400"></i> Plano de Contas (DRE)
+                </a>
+                <a href="{% url 'financeiro:lista_formas_pagamento' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
+                    <i class="fa fa-credit-card mr-3 w-5 text-purple-400"></i> Formas de Pagamento
+                </a>
+                <a href="{% url 'financeiro:lista_caixas' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
+                    <i class="fa fa-wallet mr-3 w-5 text-amber-500"></i> Contas e Caixas
+                </a>                
                 <p class="text-slate-500 text-[10px] uppercase font-black px-3 mt-6 mb-2 tracking-widest">Configuração</p>
                 <a href="{% url 'hotel:lista_quartos' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-door-open mr-3 w-5 text-indigo-400"></i> Quartos

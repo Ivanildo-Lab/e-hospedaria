@@ -1,26 +1,7 @@
 {% extends 'base.html' %}
 
-{% block titulo_cabecalho %}Mapa de Ocupação{% endblock %}
-{% block subtitulo_cabecalho %}Gerenciamento em tempo real das unidades{% endblock %}
-
 {% block content %}
-<!-- 1. RESUMO DE CORES -->
-<div class="flex flex-wrap gap-4 mb-8">
-    <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-emerald-100 shadow-sm">
-        <span class="h-3 w-3 rounded-full bg-emerald-500"></span>
-        <span class="text-[10px] font-bold text-slate-600 uppercase">Disponível</span>
-    </div>
-    <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-rose-100 shadow-sm">
-        <span class="h-3 w-3 rounded-full bg-rose-500"></span>
-        <span class="text-[10px] font-bold text-slate-600 uppercase">Ocupado</span>
-    </div>
-    <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-amber-100 shadow-sm">
-        <span class="h-3 w-3 rounded-full bg-amber-500"></span>
-        <span class="text-[10px] font-bold text-slate-600 uppercase">Sujo / Limpeza</span>
-    </div>
-</div>
-
-<!-- 2. GRID DE QUARTOS -->
+<!-- GRID DE QUARTOS -->
 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
     {% for quarto in quartos %}
     <div class="relative bg-white rounded-3xl border-2 transition-all duration-300 hover:shadow-2xl overflow-hidden
@@ -29,29 +10,22 @@
         {% elif quarto.status == 'LIMPEZA' %} border-amber-500/20
         {% else %} border-slate-200 {% endif %}">
         
-        <!-- Cabeçalho do Card -->
-        <div class="p-5 {% if quarto.status == 'DISPONIVEL' %} bg-emerald-50 
-                        {% elif quarto.status == 'OCUPADO' %} bg-rose-50
-                        {% elif quarto.status == 'LIMPEZA' %} bg-amber-50
-                        {% endif %}">
+        <!-- Cabeçalho -->
+        <div class="p-5 {% if quarto.status == 'DISPONIVEL' %} bg-emerald-50 {% elif quarto.status == 'OCUPADO' %} bg-rose-50 {% elif quarto.status == 'LIMPEZA' %} bg-amber-50 {% endif %}">
             <div class="flex justify-between items-start">
                 <div>
                     <h3 class="text-3xl font-black text-slate-800">{{ quarto.numero }}</h3>
                     <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">{{ quarto.categoria.nome }}</p>
                 </div>
-                <i class="fa {% if quarto.status == 'DISPONIVEL' %} fa-check-circle text-emerald-500 
-                             {% elif quarto.status == 'OCUPADO' %} fa-bed text-rose-500
-                             {% else %} fa-broom text-amber-500 {% endif %} text-2xl"></i>
+                <i class="fa {% if quarto.status == 'DISPONIVEL' %} fa-check-circle text-emerald-500 {% elif quarto.status == 'OCUPADO' %} fa-bed text-rose-500 {% else %} fa-broom text-amber-500 {% endif %} text-2xl"></i>
             </div>
         </div>
 
-        <!-- Corpo do Card -->
         <div class="p-5">
-            <!-- Nome do Hóspede (Apenas se ocupado) -->
             {% if quarto.status == 'OCUPADO' and quarto.hospedagem_atual %}
             <div class="mb-3">
-                <span class="text-[9px] font-bold uppercase text-slate-400 block">Hóspede</span>
-                <p class="text-xs font-bold text-slate-600 truncate">{{ quarto.hospedagem_atual.hospede.nome }}</p>
+                <span class="text-[9px] font-bold uppercase text-slate-400 block leading-none">Hóspede</span>
+                <p class="text-[11px] font-bold text-slate-600 truncate leading-tight">{{ quarto.hospedagem_atual.hospede.nome }}</p>
             </div>
             {% endif %}
 
@@ -62,24 +36,18 @@
 
             <div class="space-y-2">
                 {% if quarto.status == 'DISPONIVEL' %}
-                    <a href="{% url 'hotel:realizar_checkin' quarto.id %}" class="flex items-center justify-center gap-2 w-full py-3 bg-emerald-600 text-white text-xs font-black rounded-xl hover:bg-emerald-700 transition">
-                        <i class="fa fa-sign-in-alt"></i> CHECK-IN
-                    </a>
+                    <a href="{% url 'hotel:realizar_checkin' quarto.id %}" class="flex items-center justify-center gap-2 w-full py-3 bg-emerald-600 text-white text-xs font-black rounded-xl hover:bg-emerald-700 transition">CHECK-IN</a>
                 {% elif quarto.status == 'OCUPADO' %}
-                    <!-- BOTÃO QUE CHAMA O MODAL -->
-                    <button onclick="abrirModalCheckout(
+                    <button onclick="abrirCheckout(
                         '{{ quarto.hospedagem_atual.id }}', 
                         '{{ quarto.numero }}', 
                         '{{ quarto.hospedagem_atual.hospede.nome }}', 
-                        '{{ quarto.hospedagem_atual.data_entrada|date:'d/m H:i' }}', 
+                        '{{ quarto.hospedagem_atual.data_entrada|date:'d/m H:i' }}',
+                        '{% if quarto.hospedagem_atual.tipo == 'HORA' %}{{ quarto.categoria.preco_hora }}{% else %}{{ quarto.categoria.preco_diaria }}{% endif %}',
                         '{{ quarto.hospedagem_atual.get_tipo_display }}'
-                    )" class="flex items-center justify-center gap-2 w-full py-3 bg-rose-600 text-white text-xs font-black rounded-xl hover:bg-rose-700 shadow-lg transition">
-                        <i class="fa fa-file-invoice-dollar"></i> FECHAR CONTA
-                    </button>
+                    )" class="flex items-center justify-center gap-2 w-full py-3 bg-rose-600 text-white text-xs font-black rounded-xl hover:bg-rose-700 shadow-lg transition">FECHAR CONTA</button>
                 {% elif quarto.status == 'LIMPEZA' %}
-                    <a href="{% url 'hotel:liberar_limpeza' quarto.id %}" class="flex items-center justify-center gap-2 w-full py-3 bg-amber-600 text-white text-xs font-black rounded-xl hover:bg-amber-700 transition">
-                        <i class="fa fa-magic"></i> LIBERAR
-                    </a>
+                    <a href="{% url 'hotel:liberar_limpeza' quarto.id %}" class="flex items-center justify-center gap-2 w-full py-3 bg-amber-600 text-white text-xs font-black rounded-xl hover:bg-amber-700 transition">LIBERAR</a>
                 {% endif %}
             </div>
         </div>
@@ -87,62 +55,169 @@
     {% endfor %}
 </div>
 
-<!-- 3. MODAL DE CHECK-OUT (POPUP) -->
-<div id="modalCheckout" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden overflow-y-auto h-full w-full z-[9999] flex items-center justify-center p-4">
-    <div class="relative bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden">
-        <div class="bg-rose-50 p-6 border-b border-rose-100 text-center">
-            <div class="w-16 h-16 bg-rose-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                <i class="fa fa-file-invoice-dollar text-2xl"></i>
-            </div>
-            <h3 class="text-xl font-black text-slate-800">Fechar Conta</h3>
-            <p class="text-sm text-rose-600 font-bold uppercase tracking-widest" id="modalQuartoNum">QUARTO --</p>
+<!-- MODAL DE CHECK-OUT -->
+<div id="modalCheckout" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-[9999] flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden">
+        <div class="bg-rose-600 p-6 text-white flex justify-between items-center">
+            <h3 class="text-xl font-black uppercase tracking-tighter" id="modalQuartoNum">FECHAR CONTA</h3>
+            <button onclick="fecharModal()" class="text-white/50 hover:text-white"><i class="fa fa-times text-xl"></i></button>
         </div>
 
         <form id="formCheckout" method="POST" action="">
             {% csrf_token %}
-            <div class="p-8 space-y-4">
-                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Hóspede Atual</label>
-                    <p class="text-slate-800 font-bold" id="modalHospedeNome">--</p>
-                    <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-200">
-                        <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase">Entrada</label>
-                            <p class="text-xs font-mono text-slate-600" id="modalEntrada">--</p>
+            <div class="p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- COLUNA ESQUERDA: DADOS E CONSUMO -->
+                <div class="space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-2xl border">
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Hóspede</label>
+                        <p class="text-slate-800 font-bold" id="modalHospedeNome">--</p>
+                        <div class="grid grid-cols-2 gap-4 mt-2 pt-2 border-t text-[10px]">
+                            <div><span class="text-slate-400 uppercase">Entrada:</span> <span id="modalEntrada">--</span></div>
+                            <div class="text-right"><span id="modalTipoEstadia" class="bg-blue-100 text-blue-700 px-2 rounded-full font-black">--</span></div>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase">Tipo Estadia</label>
-                            <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[9px] font-black" id="modalTipoEstadia">--</span>
+                    </div>
+
+                    <div class="p-4 border-2 border-dashed rounded-2xl">
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-2">Lançar Consumo</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="inputQtdConsumo" value="1" min="1" class="w-16 border rounded-lg p-2 text-center text-xs">
+                            <select id="selectProduto" class="flex-1 text-xs border rounded-lg p-2">
+                                <option value="">Selecione...</option>
+                                {% for p in produtos %}<option value="{{ p.id }}" data-nome="{{ p.nome }}" data-preco="{{ p.preco_venda }}">{{ p.nome }} (R$ {{ p.preco_venda }})</option>{% endfor %}
+                            </select>
+                            <button type="button" onclick="addConsumo()" class="bg-slate-800 text-white px-3 rounded-lg">+</button>
                         </div>
                     </div>
                 </div>
-                <p class="text-xs text-slate-500 italic text-center">O valor total será calculado e enviado para o Financeiro.</p>
-            </div>
 
-            <div class="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
-                <button type="button" onclick="fecharModal()" class="flex-1 py-3 bg-white text-slate-500 font-bold rounded-xl border border-slate-200 hover:bg-slate-100 transition">VOLTAR</button>
-                <button type="submit" class="flex-1 py-3 bg-rose-600 text-white font-black rounded-xl shadow-lg hover:bg-rose-700 transition">FINALIZAR</button>
+                <!-- COLUNA DIREITA: EXTRATO E PAGAMENTO -->
+                <div class="flex flex-col h-full bg-slate-50 p-6 rounded-3xl border">
+                    <div id="listaConsumo" class="flex-1 space-y-1 overflow-y-auto max-h-40 pr-2 text-[11px] mb-4">
+                        <!-- Itens via JS -->
+                    </div>
+
+                    <!-- MÓDULO PAGAMENTO MULTI-FORMA -->
+                    <div class="bg-slate-800 p-4 rounded-2xl text-white mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h5 class="text-[9px] font-black text-slate-400 uppercase">Pagamento</h5>
+                            <select name="caixa_id" class="bg-slate-700 text-[9px] border-none rounded p-1 text-white">
+                                {% for c in caixas %}<option value="{{ c.id }}">{{ c.nome }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-12 gap-1">
+                            <select id="selectFormaPgto" onchange="checkTipoPgto()" class="col-span-5 text-[10px] bg-slate-700 border-none rounded p-2 text-white">
+                                <option value="">Forma...</option>
+                                {% for f in formas_pagamento %}<option value="{{ f.id }}" data-nome="{{ f.nome }}" data-tipo="{{ f.tipo }}">{{ f.nome }}</option>{% endfor %}
+                            </select>
+                            <input type="number" id="inputValorPgto" step="0.01" class="col-span-4 text-[10px] bg-slate-700 border-none rounded p-2 text-white text-center" placeholder="R$">
+                            <input type="number" id="inputParcelasItem" value="1" min="1" class="hidden col-span-2 text-[10px] bg-slate-600 border-none rounded p-2 text-white text-center">
+                            <button type="button" onclick="addPagamento()" class="col-span-1 bg-emerald-500 rounded text-white font-bold">+</button>
+                        </div>
+                        <div id="listaPagosVisor" class="mt-2 space-y-1 text-[10px]"></div>
+                        <div class="flex justify-between items-center pt-2 mt-2 border-t border-slate-700">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase">Saldo Devedor:</span>
+                            <span id="txtSaldoRestante" class="text-sm font-black text-rose-400">R$ 0,00</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Total Geral:</span>
+                        <span class="text-2xl font-black text-slate-800" id="valTotal">R$ 0,00</span>
+                    </div>
+                    <button type="submit" class="w-full py-4 bg-rose-600 text-white font-black rounded-xl hover:bg-rose-700 transition">FINALIZAR E IMPRIMIR</button>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-    function abrirModalCheckout(id, quarto, hospede, entrada, tipo) {
-        document.getElementById('modalQuartoNum').innerText = "Quarto " + quarto;
-        document.getElementById('modalHospedeNome').innerText = hospede;
-        document.getElementById('modalEntrada').innerText = entrada;
-        document.getElementById('modalTipoEstadia').innerText = tipo;
-        document.getElementById('formCheckout').action = "/hotel/checkout/" + id + "/";
-        document.getElementById('modalCheckout').classList.remove('hidden');
-    }
+let itensConsumo = [];
+let listaPagos = [];
+let precoBaseEstadia = 0;
 
-    function fecharModal() {
-        document.getElementById('modalCheckout').classList.add('hidden');
-    }
+function abrirCheckout(id, quarto, hospede, entrada, precoBase, tipo) {
+    itensConsumo = []; listaPagos = [];
+    precoBaseEstadia = parseFloat(precoBase.replace(',', '.'));
+    document.getElementById('modalQuartoNum').innerText = "UNIDADE " + quarto;
+    document.getElementById('modalHospedeNome').innerText = hospede;
+    document.getElementById('modalEntrada').innerText = entrada;
+    document.getElementById('modalTipoEstadia').innerText = tipo;
+    document.getElementById('formCheckout').action = "/hotel/checkout/" + id + "/";
+    renderLista();
+    document.getElementById('modalCheckout').classList.remove('hidden');
+}
 
-    window.onclick = function(event) {
-        const modal = document.getElementById('modalCheckout');
-        if (event.target == modal) { fecharModal(); }
+function checkTipoPgto() {
+    const sel = document.getElementById('selectFormaPgto');
+    const opt = sel.options[sel.selectedIndex];
+    const inputParc = document.getElementById('inputParcelasItem');
+    const inputVal = document.getElementById('inputValorPgto');
+    if (opt.dataset.tipo === 'P') {
+        inputParc.classList.remove('hidden');
+        inputVal.classList.replace('col-span-4', 'col-span-2');
+    } else {
+        inputParc.classList.add('hidden');
+        inputVal.classList.replace('col-span-2', 'col-span-4');
+        inputParc.value = 1;
     }
+}
+
+function addConsumo() {
+    const sel = document.getElementById('selectProduto');
+    const q = document.getElementById('inputQtdConsumo');
+    const opt = sel.options[sel.selectedIndex];
+    if(!opt.value) return;
+    const qtd = parseInt(q.value); const pr = parseFloat(opt.dataset.preco);
+    itensConsumo.push({ id: opt.value, nome: opt.dataset.nome, preco: pr, qtd: qtd, total: pr * qtd });
+    renderLista(); sel.selectedIndex = 0; q.value = 1;
+}
+
+function addPagamento() {
+    const sel = document.getElementById('selectFormaPgto');
+    const val = document.getElementById('inputValorPgto');
+    const parc = document.getElementById('inputParcelasItem');
+    const opt = sel.options[sel.selectedIndex];
+    if(!opt.value || !val.value) return;
+    listaPagos.push({ id: opt.value, nome: opt.dataset.nome, valor: parseFloat(val.value), tipo: opt.dataset.tipo, parcelas: parseInt(parc.value) });
+    renderLista(); val.value = ''; sel.selectedIndex = 0; checkTipoPgto();
+}
+
+function removerItem(tipo, i) {
+    if(tipo === 'C') itensConsumo.splice(i, 1);
+    else listaPagos.splice(i, 1);
+    renderLista();
+}
+
+function renderLista() {
+    const divConsumo = document.getElementById('listaConsumo');
+    const divPagos = document.getElementById('listaPagosVisor');
+    const totalDisp = document.getElementById('valTotal');
+    const saldoDisp = document.getElementById('txtSaldoRestante');
+
+    let totalItens = 0;
+    let htmlC = `<div class="flex justify-between bg-blue-50 p-2 rounded text-blue-700 font-bold mb-2"><span>ESTADIA BASE</span><span>R$ ${precoBaseEstadia.toFixed(2)}</span></div>`;
+    itensConsumo.forEach((item, i) => {
+        totalItens += item.total;
+        htmlC += `<div class="flex justify-between border-b pb-1"><span>${item.qtd}x ${item.nome}</span><span>R$ ${item.total.toFixed(2)} <button type="button" onclick="removerItem('C', ${i})" class="text-rose-400">×</button></span><input type="hidden" name="produtos[]" value="${item.id}"><input type="hidden" name="quantidades[]" value="${item.qtd}"></div>`;
+    });
+    divConsumo.innerHTML = htmlC;
+
+    let totalP = 0; let htmlP = '';
+    listaPagos.forEach((p, i) => {
+        totalP += p.valor;
+        htmlP += `<div class="flex justify-between text-emerald-400"><span>${p.nome} ${p.tipo=='P'?'('+p.parcelas+'x)':''}</span><span>R$ ${p.valor.toFixed(2)} <button type="button" onclick="removerItem('P', ${i})" class="text-rose-400">×</button></span><input type="hidden" name="pgto_ids[]" value="${p.id}"><input type="hidden" name="pgto_valores[]" value="${p.valor}"><input type="hidden" name="pgto_parcelas[]" value="${p.parcelas}"></div>`;
+    });
+    divPagos.innerHTML = htmlP;
+
+    const totalG = precoBaseEstadia + totalItens;
+    const saldo = totalG - totalP;
+    totalDisp.innerText = "R$ " + totalG.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    saldoDisp.innerText = "R$ " + (saldo > 0 ? saldo.toFixed(2) : "0,00");
+    saldoDisp.className = saldo <= 0.01 ? "text-sm font-black text-emerald-400" : "text-sm font-black text-rose-400";
+}
+
+function fecharModal() { document.getElementById('modalCheckout').classList.add('hidden'); }
+window.onclick = function(e) { if(e.target == document.getElementById('modalCheckout')) fecharModal(); }
 </script>
 {% endblock %}

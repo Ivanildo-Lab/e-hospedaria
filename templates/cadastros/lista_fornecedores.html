@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block titulo_cabecalho %}Fornecedores{% endblock %}
+{% block subtitulo_cabecalho %}Gestão de parceiros e fornecedores de insumos{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+    
+    <!-- BARRA DE BUSCA -->
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center">
+        <form method="GET" class="flex flex-1 gap-3 w-full">
+            <div class="relative flex-1">
+                <i class="fa fa-search absolute left-4 top-3.5 text-slate-400 text-xs"></i>
+                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Buscar por Razão Social ou CNPJ..." 
+                       class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none text-sm">
+            </div>
+            <button type="submit" class="bg-slate-800 text-white px-6 rounded-2xl text-xs font-bold hover:bg-black transition">FILTRAR</button>
+        </form>
+        
+        <a href="{% url 'novo_fornecedor' %}" class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-black text-xs rounded-2xl shadow-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
+            <i class="fa fa-plus"></i> NOVO FORNECEDOR
+        </a>
+    </div>
+
+    <!-- TABELA -->
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                <tr>
+                    <th class="px-6 py-5">Fornecedor / Razão Social</th>
+                    <th class="px-6 py-5">CNPJ</th>
+                    <th class="px-6 py-5">Contato Comercial</th>
+                    <th class="px-6 py-5 text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                {% for f in cadastros %}
+                <tr class="hover:bg-slate-50/80 transition-colors group">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+                                <i class="fa fa-truck"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-black text-slate-700">{{ f.nome }}</p>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase">{{ f.cidade }}/{{ f.uf }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-xs font-mono text-slate-600">{{ f.cpf_cnpj|default:"---" }}</td>
+                    <td class="px-6 py-4">
+                        <p class="text-xs text-slate-700 font-bold">{{ f.celular|default:f.telefone_fixo }}</p>
+                        <p class="text-[10px] text-slate-400 truncate w-40">{{ f.email|default:"" }}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex justify-center gap-2">
+                            <a href="{% url 'editar_cadastro' f.pk %}" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors" title="Editar">
+                                <i class="fa fa-pencil-alt text-xs"></i>
+                            </a>
+                            <button onclick="abrirModalExcluir('{{ f.pk }}', '{{ f.nome|escapejs }}')" class="p-2 bg-slate-100 text-rose-500 rounded-lg hover:bg-rose-600 hover:text-white transition-colors">
+                                <i class="fa fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-20 text-center text-slate-400 italic">Nenhum fornecedor cadastrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Reutilizamos o script de exclusão que já existe no seu projeto -->
+{% endblock %}

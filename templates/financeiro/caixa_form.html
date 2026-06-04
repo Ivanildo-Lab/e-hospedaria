@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-xl mx-auto bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10">
+    <div class="flex items-center gap-4 mb-10 border-b pb-6">
+        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center"><i class="fa fa-university text-xl"></i></div>
+        <div>
+            <h3 class="font-black text-slate-800 uppercase text-sm">Dados da Conta / Caixa</h3>
+            <p class="text-xs text-slate-400 font-medium">Cadastre contas bancárias ou caixas físicos da recepção</p>
+        </div>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        <div>
+            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Nome da Conta (Ex: Caixa Recepção, Banco do Brasil)</label>
+            {{ form.nome }}
+        </div>
+        <div>
+            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Saldo de Abertura (R$)</label>
+            {{ form.saldo_inicial }}
+            <p class="text-[9px] text-slate-400 mt-2 italic leading-tight">* Saldo existente antes de começar a usar o sistema.</p>
+        </div>
+
+        <div class="flex gap-4 pt-8 border-t border-slate-50">
+            <a href="{% url 'financeiro:lista_caixas' %}" class="flex-1 text-center py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition">CANCELAR</a>
+            <button type="submit" class="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition">SALVAR CONTA</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block titulo_cabecalho %}Formas de Pagamento{% endblock %}
+{% block subtitulo_cabecalho %}Configuração de recebíveis e faturamentos{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    
+    <!-- HEADER DE AÇÕES -->
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex justify-between items-center">
+        <div>
+            <h3 class="font-black text-slate-700 uppercase text-xs tracking-widest">Métodos Cadastrados</h3>
+            <p class="text-[10px] text-slate-400 font-bold uppercase">Defina como o hotel recebe seus pagamentos</p>
+        </div>
+        <a href="{% url 'financeiro:nova_forma_pagamento' %}" class="px-6 py-3 bg-blue-600 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition flex items-center gap-2">
+            <i class="fa fa-plus"></i> NOVA FORMA
+        </a>
+    </div>
+
+    <!-- TABELA -->
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                <tr>
+                    <th class="px-8 py-5">Descrição</th>
+                    <th class="px-8 py-5">Comportamento</th>
+                    <th class="px-8 py-5 text-center">Status</th>
+                    <th class="px-8 py-5 text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                {% for f in formas %}
+                <tr class="hover:bg-slate-50/80 transition-colors group">
+                    <td class="px-8 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center">
+                                <i class="fa {% if f.tipo == 'V' %}fa-money-bill-wave{% else %}fa-credit-card{% endif %}"></i>
+                            </div>
+                            <span class="text-sm font-black text-slate-700">{{ f.nome }}</span>
+                        </div>
+                    </td>
+                    <td class="px-8 py-4">
+                        {% if f.tipo == 'V' %}
+                            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-lg uppercase">À Vista / Caixa</span>
+                        {% else %}
+                            <span class="px-3 py-1 bg-purple-100 text-purple-700 text-[10px] font-black rounded-lg uppercase">A Prazo / Parcelado</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-8 py-4 text-center">
+                        {% if f.ativo %}
+                            <span class="text-emerald-500 text-[10px] font-black uppercase tracking-tighter"><i class="fa fa-check-circle mr-1"></i> Ativo</span>
+                        {% else %}
+                            <span class="text-slate-300 text-[10px] font-black uppercase tracking-tighter">Inativo</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-8 py-4 text-center">
+                        <!-- Botão de Edição (opcional, pode implementar depois) -->
+                        <button class="p-2 bg-slate-100 text-slate-400 rounded-lg hover:bg-blue-600 hover:text-white transition-colors">
+                            <i class="fa fa-pencil-alt text-xs"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-8 py-20 text-center">
+                        <div class="flex flex-col items-center gap-3">
+                            <i class="fa fa-credit-card text-4xl text-slate-100"></i>
+                            <p class="text-slate-400 font-bold uppercase text-xs">Nenhuma forma de pagamento configurada.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

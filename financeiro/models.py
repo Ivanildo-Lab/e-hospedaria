@@ -39,3 +39,18 @@ class Lancamento(ModeloSaaS):
     descricao = models.CharField(max_length=255)
     valor = models.DecimalField(max_digits=12, decimal_places=2)
     tipo = models.CharField(max_length=1, choices=TIPO_CHOICES)
+
+# financeiro/models.py
+
+class FormaPagamento(ModeloSaaS):
+    TIPO_CHOICES = [
+        ('V', 'À Vista (Entrada Imediata)'),
+        ('P', 'A Prazo (Gera Parcelas/Contas)'),
+    ]
+    
+    nome = models.CharField(max_length=100) # Ex: Dinheiro, Cartão de Crédito, PIX, Faturado Empresa
+    tipo = models.CharField(max_length=1, choices=TIPO_CHOICES, default='V')
+    ativo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nome

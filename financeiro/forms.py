@@ -1,5 +1,5 @@
 from django import forms
-from .models import Conta, Lancamento, Caixa, PlanoDeContas
+from .models import Conta, Lancamento, Caixa, PlanoDeContas, FormaPagamento
 from cadastros.models import Cadastro
 
 # --- FORMULÁRIO DE CAIXA / BANCO ---
@@ -10,8 +10,10 @@ class CaixaForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field_name, field in self.fields.items():
-            self.fields[field_name].widget.attrs.update({'class': 'w-full border p-2 rounded text-sm'})
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                'class': 'w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none transition-all'
+            })
 
 # --- FORMULÁRIO DE PLANO DE CONTAS ---
 class PlanoContasForm(forms.ModelForm):
@@ -23,7 +25,9 @@ class PlanoContasForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
-            field.widget.attrs.update({'class': 'w-full border p-2 rounded text-sm'})
+            field.widget.attrs.update({
+                'class': 'w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none transition-all'
+            })
 
     def clean_codigo(self):
         codigo = self.cleaned_data.get('codigo')
@@ -35,6 +39,19 @@ class PlanoContasForm(forms.ModelForm):
             if existe:
                 raise forms.ValidationError("Este Código já está em uso nesta empresa.")
         return codigo
+
+# --- NOVO: FORMULÁRIO DE FORMAS DE PAGAMENTO ---
+class FormaPagamentoForm(forms.ModelForm):
+    class Meta:
+        model = FormaPagamento
+        fields = ['nome', 'tipo', 'ativo']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                'class': 'w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none transition-all'
+            })
 
 # --- FORMULÁRIO DE CONTA (A PAGAR / RECEBER) ---
 class ContaForm(forms.ModelForm):
@@ -55,16 +72,19 @@ class ContaForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         for field in self.fields.values():
-            field.widget.attrs.update({'class': 'w-full border p-2 rounded text-sm'})
+            field.widget.attrs.update({
+                'class': 'w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none transition-all'
+            })
             
         if user:
+            # Filtra apenas cadastros deste Hotel (Hóspedes, Fornecedores ou Empresas Convênio)
             self.fields['cadastro'].queryset = Cadastro.objects.filter(empresa=user.empresa)
             planos = PlanoDeContas.objects.filter(empresa=user.empresa)
             if tipo_filtro:
                 planos = planos.filter(tipo=tipo_filtro)
             self.fields['plano_de_contas'].queryset = planos
 
-# --- FORMULÁRIO DE LANÇAMENTO MANUAL ---
+# --- FORMULÁRIO DE LANÇAMENTO MANUAL (FLUXO DE CAIXA) ---
 class LancamentoManualForm(forms.ModelForm):
     class Meta:
         model = Lancamento
@@ -78,7 +98,9 @@ class LancamentoManualForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         for field in self.fields.values():
-            field.widget.attrs.update({'class': 'w-full border p-2 rounded text-sm'})
+            field.widget.attrs.update({
+                'class': 'w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none transition-all'
+            })
         
         if user:
             self.fields['caixa'].queryset = Caixa.objects.filter(empresa=user.empresa)

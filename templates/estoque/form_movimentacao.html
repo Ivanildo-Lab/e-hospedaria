@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10">
+    <h3 class="text-xl font-black text-slate-800 mb-8 flex items-center gap-3">
+        <i class="fa fa-truck-loading text-emerald-500"></i> Entrada de Produtos
+    </h3>
+
+    <form method="post" class="space-y-6" id="formMovimento">
+        {% csrf_token %}
+        
+        <!-- Linha 1: Produto -->
+        <div class="grid grid-cols-1 gap-6">
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Produto</label>
+                {{ form.produto }}
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Fornecedor</label>
+                {{ form.fornecedor }}
+            </div>
+        </div>
+
+        <!-- Linha 2: Qtd e Valor -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Quantidade</label>
+                {{ form.quantidade }}
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Valor Unitário (Custo)</label>
+                {{ form.valor_unitario }}
+            </div>
+        </div>
+
+        <!-- Banner de Totalizador -->
+        <div class="p-5 bg-emerald-50 rounded-2xl border-2 border-emerald-100 flex justify-between items-center">
+            <span class="text-xs font-bold text-emerald-700 uppercase tracking-widest">Total da Operação:</span>
+            <span class="text-2xl font-black text-emerald-800" id="displayTotal">R$ 0,00</span>
+        </div>
+
+        <!-- Linha 3: Pagamento -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Forma de Pagamento</label>
+                {{ form.forma_pagamento }}
+            </div>
+            
+            <div id="div_caixa">
+                <label class="text-[10px] font-black text-blue-500 uppercase ml-1 mb-1 block">Sair dinheiro de qual Caixa?</label>
+                {{ form.caixa_pagamento }}
+            </div>
+            
+            <div id="div_parcelas" class="hidden">
+                <label class="text-[10px] font-black text-rose-500 uppercase ml-1 mb-1 block">Nº de Parcelas</label>
+                {{ form.num_parcelas }}
+            </div>
+        </div>
+
+        <!-- Oculto para o usuário não mexer na tela de entrada -->
+        <div class="hidden">{{ form.tipo }}</div>
+
+        <div>
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Observação</label>
+            {{ form.observacao }}
+        </div>
+
+        <div class="flex gap-4 pt-6">
+            <button type="submit" class="flex-1 py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl hover:bg-black transition-all transform hover:scale-[1.01]">
+                CONFIRMAR ENTRADA
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Seletores
+    const inputQtd = document.querySelector('input[name="quantidade"]');
+    const inputVal = document.querySelector('input[name="valor_unitario"]');
+    const displayTotal = document.getElementById('displayTotal');
+    const selectForma = document.querySelector('select[name="forma_pagamento"]');
+    const divCaixa = document.getElementById('div_caixa');
+    const divParcelas = document.getElementById('div_parcelas');
+
+    // Função de Cálculo do Total
+    function calcular() {
+        let qtd = parseFloat(inputQtd.value) || 0;
+        let val = parseFloat(inputVal.value.replace(',', '.')) || 0;
+        let total = qtd * val;
+        displayTotal.innerText = "R$ " + total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    // Função para mostrar/esconder campos de pagamento
+    function toggleCampos() {
+        if (selectForma.value === 'V') {
+            divCaixa.classList.remove('hidden');
+            divParcelas.classList.add('hidden');
+        } else if (selectForma.value === 'P') {
+            divCaixa.classList.add('hidden');
+            divParcelas.classList.remove('hidden');
+        }
+    }
+
+    // Eventos
+    inputQtd.addEventListener('input', calcular);
+    inputVal.addEventListener('input', calcular);
+    selectForma.addEventListener('change', toggleCampos);
+    
+    // Executa ao carregar
+    window.onload = function() {
+        // Forçamos o tipo para Entrada
+        document.querySelector('select[name="tipo"]').value = 'E';
+        toggleCampos();
+        calcular();
+    };
+</script>
+{% endblock %}

@@ -1,9 +1,10 @@
 from django.contrib import admin
-from .models import Produto, EstoqueFrigobar, MovimentacaoEstoque
+from .models import Produto, EstoqueFrigobar, MovimentacaoEstoque, Inventario
 
 @admin.register(Produto)
 class ProdutoAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'valor_custo', 'preco_venda', 'estoque_deposito', 'empresa')
+    list_display = ('nome', 'tipo', 'valor_custo', 'preco_venda', 'estoque_deposito', 'empresa')
+    list_filter = ('tipo', 'empresa')
     exclude = ('empresa',)
 
     def save_model(self, request, obj, form, change):
@@ -13,7 +14,6 @@ class ProdutoAdmin(admin.ModelAdmin):
 @admin.register(EstoqueFrigobar)
 class EstoqueFrigobarAdmin(admin.ModelAdmin):
     list_display = ('quarto', 'produto', 'quantidade_atual', 'capacidade_maxima')
-    list_filter = ('quarto',)
     exclude = ('empresa',)
 
     def save_model(self, request, obj, form, change):

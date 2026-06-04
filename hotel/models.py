@@ -37,6 +37,11 @@ class Hospedagem(ModeloSaaS):
     data_entrada = models.DateTimeField(default=timezone.now)
     data_saida = models.DateTimeField(null=True, blank=True)
     ativa = models.BooleanField(default=True)
+    valor_estadia = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    valor_consumo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)    
+    pagador_final = models.ForeignKey('cadastros.Cadastro', on_delete=models.SET_NULL, null=True, blank=True, related_name='contas_pagas')
+
 
     def save(self, *args, **kwargs):
         # Ao salvar um novo check-in, o quarto fica OCUPADO

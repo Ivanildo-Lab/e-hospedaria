@@ -1,14 +1,17 @@
-# hotel/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Quarto, CategoriaQuarto, Hospedagem
-from .forms import CheckInForm, CategoriaQuartoForm, QuartoForm
-from financeiro.models import Conta, PlanoDeContas # Importante para a integração
-from decimal import Decimal
+from django.db import transaction
 from django.utils import timezone
-from django.http import JsonResponse
-from estoque.models import Produto
+from decimal import Decimal
+from datetime import timedelta
+
+from core.models import ParametroSistema
+from .models import ConsumoHospedagem, Quarto, CategoriaQuarto, Hospedagem
+from .forms import CheckInForm, CategoriaQuartoForm, QuartoForm
+# Importando os modelos das outras APPS
+from estoque.models import Produto, EstoqueFrigobar
+from financeiro.models import Conta, Lancamento, PlanoDeContas, Caixa, FormaPagamento 
 
 def home(request):
     return render(request, 'home.html')
@@ -16,28 +19,31 @@ def home(request):
 @login_required
 def mapa_quartos(request):
     quartos = Quarto.objects.filter(empresa=request.user.empresa).order_by('numero')
-    return render(request, 'hotel/mapa_quartos.html', {'quartos': quartos})
+    produtos = Produto.objects.filter(empresa=request.user.empresa).order_by('nome')
+    caixas = Caixa.objects.filter(empresa=request.user.empresa)
+    formas_pagamento = FormaPagamento.objects.filter(empresa=request.user.empresa, ativo=True)
+    
+    return render(request, 'hotel/mapa_quartos.html', {
+        'quartos': quartos,
+        'produtos': produtos,
+        'caixas': caixas,
+        'formas_pagamento': formas_pagamento
+    })
 
-# --- GESTÃO DE CATEGORIAS ---
+# --- GESTÃO DE CONFIGURAÇÕES (CATEGORIAS E QUARTOS) ---
+
 @login_required
 def lista_categorias(request):
     categorias = CategoriaQuarto.objects.filter(empresa=request.user.empresa)
     return render(request, 'hotel/categoria_lista.html', {'categorias': categorias})
-
-# hotel/views.py
 
 @login_required
 def nova_categoria(request):
     if request.method == 'POST':
         form = CategoriaQuartoForm(request.POST)
         if form.is_valid():
-            # Verifica se o usuário tem uma empresa vinculada antes de salvar
-            if not request.user.empresa:
-                messages.error(request, "Erro: Seu usuário não está vinculado a nenhuma empresa. Procure o administrador.")
-                return redirect('hotel:lista_categorias')
-
             cat = form.save(commit=False)
-            cat.empresa = request.user.empresa  # Aqui injetamos a empresa
+            cat.empresa = request.user.empresa
             cat.save()
             messages.success(request, "Categoria criada com sucesso!")
             return redirect('hotel:lista_categorias')
@@ -45,8 +51,6 @@ def nova_categoria(request):
         form = CategoriaQuartoForm()
     return render(request, 'hotel/form_config.html', {'form': form, 'titulo': 'Nova Categoria'})
 
-
-# --- GESTÃO DE QUARTOS ---
 @login_required
 def lista_quartos(request):
     quartos = Quarto.objects.filter(empresa=request.user.empresa).order_by('numero')
@@ -57,21 +61,17 @@ def novo_quarto(request):
     if request.method == 'POST':
         form = QuartoForm(request.POST, user=request.user)
         if form.is_valid():
-            # Proteção SaaS
-            if not request.user.empresa:
-                messages.error(request, "Erro: Seu usuário não está vinculado a nenhuma empresa.")
-                return redirect('hotel:lista_quartos')
-
             quarto = form.save(commit=False)
             quarto.empresa = request.user.empresa
             quarto.save()
-            messages.success(request, "Quarto cadastrado com sucesso!")
+            messages.success(request, "Quarto cadastrado!")
             return redirect('hotel:lista_quartos')
     else:
         form = QuartoForm(user=request.user)
     return render(request, 'hotel/form_config.html', {'form': form, 'titulo': 'Novo Quarto'})
 
-# --- OPERACIONAL ---
+# --- OPERACIONAL (CHECK-IN E LIMPEZA) ---
+
 @login_required
 def realizar_checkin(request, quarto_id):
     quarto = get_object_or_404(Quarto, id=quarto_id, empresa=request.user.empresa)
@@ -84,7 +84,7 @@ def realizar_checkin(request, quarto_id):
             hospedagem.save()
             quarto.status = 'OCUPADO'
             quarto.save()
-            messages.success(request, f"Check-in realizado no Quarto {quarto.numero}!")
+            messages.success(request, "Check-in realizado!")
             return redirect('hotel:mapa_quartos')
     else:
         form = CheckInForm(user=request.user)
@@ -96,9 +96,10 @@ def liberar_limpeza(request, quarto_id):
     if quarto.status == 'LIMPEZA':
         quarto.status = 'DISPONIVEL'
         quarto.save()
-        messages.success(request, f"Quarto {quarto.numero} liberado!")
+        messages.success(request, "Quarto liberado!")
     return redirect('hotel:mapa_quartos')
 
+# --- O CORAÇÃO DO SISTEMA: CHECK-OUT COMPLETO ---
 
 @login_required
 def realizar_checkout(request, hospedagem_id):
@@ -106,67 +107,162 @@ def realizar_checkout(request, hospedagem_id):
     quarto = hospedagem.quarto
 
     if request.method == 'POST':
-        # 1. Recebe os dados do formulário/modal
-        data_saida = timezone.now()
-        
-        # 2. Processa o Consumo (Itens enviados via lista no POST)
-        ids_produtos = request.POST.getlist('produtos[]')
-        qtds_produtos = request.POST.getlist('quantidades[]')
-        total_consumo = Decimal('0.00')
+        try:
+            with transaction.atomic():
+                # 1. CÁLCULO DA ESTADIA
+                data_saida = timezone.now()
+                duracao = data_saida - hospedagem.data_entrada
+                
+                if hospedagem.tipo == 'HORA':
+                    # Converte para Decimal para evitar erro de float
+                    horas = Decimal(duracao.total_seconds() / 3600)
+                    if horas < 1: horas = Decimal('1')
+                    hospedagem.valor_estadia = horas * quarto.categoria.preco_hora
+                else:
+                    dias = Decimal(duracao.days)
+                    if dias < 1: dias = Decimal('1')
+                    hospedagem.valor_estadia = dias * quarto.categoria.preco_diaria
 
-        for p_id, qtd in zip(ids_produtos, qtds_produtos):
-            produto = get_object_or_404(Produto, id=p_id, empresa=request.user.empresa)
-            quantidade = int(qtd)
-            if quantidade > 0:
-                ConsumoHospedagem.objects.create(
-                    empresa=request.user.empresa,
-                    hospedagem=hospedagem,
-                    produto=produto,
-                    quantidade=quantidade,
-                    valor_unitario=produto.preco_venda
+                # 2. PROCESSAMENTO DE CONSUMO E ESTOQUE
+                ids_produtos = request.POST.getlist('produtos[]')
+                qtds_produtos = request.POST.getlist('quantidades[]')
+                total_c = Decimal('0.00')
+
+                for p_id, qtd_str in zip(ids_produtos, qtds_produtos):
+                    prod = get_object_or_404(Produto, id=p_id, empresa=request.user.empresa)
+                    
+                    # CORREÇÃO DO ERRO: Converter quantidade de texto para INTEIRO
+                    quantidade_int = int(qtd_str) 
+
+                    if quantidade_int > 0:
+                        ConsumoHospedagem.objects.create(
+                            empresa=request.user.empresa,
+                            hospedagem=hospedagem,
+                            produto=prod,
+                            quantidade=quantidade_int, # Passando como Inteiro
+                            valor_unitario=prod.preco_venda
+                        )
+                        total_c += (prod.preco_venda * Decimal(quantidade_int))
+                        
+                        if prod.tipo == 'P':
+                            est = EstoqueFrigobar.objects.filter(quarto=quarto, produto=prod).first()
+                            if est:
+                                est.quantidade_atual -= quantidade_int
+                                est.save()
+
+                hospedagem.valor_consumo = total_c
+                hospedagem.valor_total = hospedagem.valor_estadia + total_c
+                hospedagem.data_saida = data_saida
+                hospedagem.ativa = False
+                
+                # Pagador (Hóspede ou Convênio)
+                pagador = hospedagem.hospede.empresa_convenio if hospedagem.hospede.empresa_convenio else hospedagem.hospede
+                hospedagem.pagador_final = pagador
+                hospedagem.save()
+                
+                # Libera o Quarto
+                quarto.status = 'LIMPEZA'
+                quarto.save()
+
+                # 3. FINANCEIRO (Plano de Contas e Caixa)
+                plano_r, _ = PlanoDeContas.objects.get_or_create(
+                    empresa=request.user.empresa, 
+                    nome="RECEITA DE HOSPEDAGEM", 
+                    tipo='R', 
+                    defaults={'codigo':'1.01'}
                 )
-                total_consumo += (produto.preco_venda * quantidade)
-                # Opcional: Baixa no estoque aqui
+                
+                caixa_id = request.POST.get('caixa_id')
+                caixa_sel = Caixa.objects.filter(id=caixa_id, empresa=request.user.empresa).first()
+                
+                # Se não selecionou caixa no modal, tenta o padrão
+                if not caixa_sel:
+                    param = ParametroSistema.objects.filter(empresa=request.user.empresa, chave='CAIXA_PADRAO_ID').first()
+                    if param:
+                        caixa_sel = Caixa.objects.filter(id=param.valor, empresa=request.user.empresa).first()
 
-        # 3. Cálculo da Estadia
-        duracao = data_saida - hospedagem.data_entrada
-        if hospedagem.tipo == 'HORA':
-            horas = Decimal(duracao.total_seconds() / 3600)
-            if horas < 1: horas = 1
-            valor_estadia = horas * quarto.categoria.preco_hora
-        else:
-            dias = Decimal(duracao.days)
-            if dias < 1: dias = 1
-            valor_estadia = dias * quarto.categoria.preco_diaria
+                # 4. PROCESSAR PAGAMENTOS MÚLTIPLOS (SPLIT)
+                pgto_ids = request.POST.getlist('pgto_ids[]')
+                pgto_valores = request.POST.getlist('pgto_valores[]')
+                pgto_parcelas = request.POST.getlist('pgto_parcelas[]')
 
-        # 4. Finalização
-        hospedagem.valor_estadia = valor_estadia
-        hospedagem.valor_consumo = total_consumo
-        hospedagem.valor_total = valor_estadia + total_consumo
-        hospedagem.data_saida = data_saida
-        hospedagem.ativa = False
-        hospedagem.save()
+                for f_id, f_val_str, f_parc_str in zip(pgto_ids, pgto_valores, pgto_parcelas):
+                    forma = get_object_or_404(FormaPagamento, id=f_id, empresa=request.user.empresa)
+                    
+                    # CONVERSÕES DE SEGURANÇA
+                    v_fatia = Decimal(f_val_str)
+                    n_parc = int(f_parc_str) if f_parc_str else 1
 
-        quarto.status = 'LIMPEZA'
-        quarto.save()
+                    if forma.tipo == 'V': # À VISTA
+                        ct = Conta.objects.create(
+                            empresa=request.user.empresa,
+                            descricao=f"Pgto {forma.nome} Q-{quarto.numero}",
+                            plano_de_contas=plano_r,
+                            cadastro=pagador,
+                            valor=v_fatia,
+                            data_vencimento=data_saida.date(),
+                            status='PAGA',
+                            documento=f"FAT-{hospedagem.id}"
+                        )
+                        if caixa_sel:
+                            Lancamento.objects.create(
+                                empresa=request.user.empresa,
+                                caixa=caixa_sel,
+                                plano_de_contas=plano_r,
+                                conta_origem=ct,
+                                data_lancamento=data_saida.date(),
+                                valor=v_fatia,
+                                tipo='C',
+                                descricao=f"Receb. {forma.nome} Q-{quarto.numero}"
+                            )
+                    else: # A PRAZO (PARCELADO)
+                        v_parc = v_fatia / Decimal(n_parc) # Divisão entre Decimais
+                        for i in range(n_parc):
+                            Conta.objects.create(
+                                empresa=request.user.empresa,
+                                descricao=f"Parc {i+1}/{n_parc} {forma.nome} Q-{quarto.numero}",
+                                plano_de_contas=plano_r,
+                                cadastro=pagador,
+                                valor=v_parc,
+                                data_vencimento=data_saida.date() + timedelta(days=30*i),
+                                status='PENDENTE',
+                                documento=f"FAT-{hospedagem.id}"
+                            )
 
-        # 5. Lançamento Financeiro Automático
-        from financeiro.models import Conta, PlanoDeContas
-        # Quem paga: Verifica se o hóspede tem empresa de convênio
-        favorecido = hospedagem.hospede.empresa_convenio if hospedagem.hospede.empresa_convenio else hospedagem.hospede
-        plano = PlanoDeContas.objects.filter(empresa=request.user.empresa, tipo='R').first()
-        
-        Conta.objects.create(
-            empresa=request.user.empresa,
-            descricao=f"Hospedagem Q-{quarto.numero} ({hospedagem.hospede.nome})",
-            plano_de_contas=plano,
-            cadastro=favorecido,
-            valor=hospedagem.valor_total,
-            data_vencimento=data_saida.date(),
-            status='PENDENTE'
-        )
+            messages.success(request, "Check-out e Financeiro processados com sucesso!")
+            return redirect('hotel:imprimir_comprovante', hospedagem_id=hospedagem.id)
 
-        messages.success(request, f"Check-out realizado! Total: R$ {hospedagem.valor_total:.2f}")
-        return redirect('hotel:mapa_quartos')
+        except Exception as e:
+            # Captura qualquer erro e mostra na tela para facilitar o debug
+            messages.error(request, f"Erro operacional no fechamento: {str(e)}")
+            return redirect('hotel:mapa_quartos')
 
     return redirect('hotel:mapa_quartos')
+        
+@login_required
+def imprimir_comprovante(request, hospedagem_id):
+    hospedagem = get_object_or_404(Hospedagem, id=hospedagem_id, empresa=request.user.empresa)
+    consumos = hospedagem.consumos.all()
+    # Busca todas as contas geradas por este checkout
+    pagamentos = Conta.objects.filter(empresa=request.user.empresa, documento=f"FAT-{hospedagem.id}")
+    
+    return render(request, 'hotel/comprovante.html', {
+        'hospedagem': hospedagem,
+        'consumos': consumos,
+        'pagamentos': pagamentos,
+        'empresa': request.user.empresa
+    })
+# hotel/views.py
+
+@login_required
+def historico_hospedagens(request):
+    # Busca apenas hospedagens ENCERRADAS (ativa=False)
+    queryset = Hospedagem.objects.filter(empresa=request.user.empresa, ativa=False).order_by('-data_saida')
+
+    # Filtro de busca (Nome do hóspede ou Número do Quarto)
+    q = request.GET.get('q')
+    if q:
+        from django.db.models import Q
+        queryset = queryset.filter(Q(hospede__nome__icontains=q) | Q(quarto__numero__icontains=q))
+
+    return render(request, 'hotel/historico_lista.html', {'historico': queryset, 'filtro_q': q})
