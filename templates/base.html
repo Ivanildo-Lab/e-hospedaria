@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="{% static 'img/favicon.png' %}">
+
     <title>{% block title %}e-Hotelaria SaaS{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -33,19 +35,17 @@
                 <a href="#" class="flex items-center text-slate-400 py-3 px-3 rounded-xl text-sm font-bold cursor-not-allowed opacity-50">
                     <i class="fa fa-chart-pie mr-3 w-5"></i> Dashboard (Em breve)
                 </a>
-
                 <p class="text-slate-500 text-[10px] uppercase font-black px-3 mt-6 mb-2 tracking-widest">Hospedagem</p>
                 <a href="{% url 'hotel:mapa_quartos' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-th-large mr-3 w-5 text-emerald-500"></i> Mapa de Quartos
                 </a>
-                <a href="{% url 'hotel:historico_hospedagens' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
-                    <i class="fa fa-history mr-3 w-5 text-emerald-500"></i> Histórico Hospedagem/ Reimpressão
-                </a>
-                
                 <a href="{% url 'lista_hospedes' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-users mr-3 w-5 text-emerald-500"></i> Hóspedes
                 </a>
-                <!--  Logística e Compras -->
+                 <a href="{% url 'hotel:historico_hospedagens' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
+                    <i class="fa fa-history mr-3 w-5 text-emerald-500"></i> Histórico Hospedagem/ Reimpressão
+                </a>
+               <!--  Logística e Compras -->
                 <p class="text-slate-500 text-[10px] uppercase font-black px-3 mt-6 mb-2 tracking-widest">Logística</p>
                 <a href="{% url 'lista_fornecedores' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-truck-moving mr-3 w-5 text-orange-400"></i> Fornecedores

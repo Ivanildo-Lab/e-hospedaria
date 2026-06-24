@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block titulo_cabecalho %}Cadastro de Quartos{% endblock %}
+{% block subtitulo_cabecalho %}Gerencie as unidades de hospedagem do seu hotel{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+    
+    <!-- BARRA DE TOPO -->
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex justify-between items-center">
+        <div>
+            <h3 class="font-black text-slate-700 uppercase text-xs tracking-widest">Unidades Cadastradas</h3>
+            <p class="text-[10px] text-slate-400 font-bold uppercase">Configure números, categorias e andares</p>
+        </div>
+        <a href="{% url 'hotel:novo_quarto' %}" class="px-6 py-3 bg-blue-600 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition flex items-center gap-2">
+            <i class="fa fa-plus"></i> NOVO QUARTO
+        </a>
+    </div>
+
+    <!-- TABELA DE QUARTOS -->
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                <tr>
+                    <th class="px-8 py-5">Número / Nome</th>
+                    <th class="px-8 py-5">Categoria / Tarifa</th>
+                    <th class="px-8 py-5 text-center">Status Atual</th>
+                    <th class="px-8 py-5 text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                {% for q in quartos %}
+                <tr class="hover:bg-slate-50/80 transition-colors group">
+                    <td class="px-8 py-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-lg shadow-lg">
+                                {{ q.numero }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-black text-slate-700">Unidade {{ q.numero }}</p>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase">{{ q.andar|default:"Térreo" }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-8 py-4">
+                        <p class="text-sm font-bold text-slate-600">{{ q.categoria.nome }}</p>
+                        <p class="text-[10px] text-emerald-500 font-black uppercase">R$ {{ q.categoria.preco_diaria }}/dia</p>
+                    </td>
+                    <td class="px-8 py-4 text-center">
+                        <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter
+                            {% if q.status == 'DISPONIVEL' %} bg-emerald-100 text-emerald-700
+                            {% elif q.status == 'OCUPADO' %} bg-rose-100 text-rose-700
+                            {% elif q.status == 'LIMPEZA' %} bg-amber-100 text-amber-700
+                            {% else %} bg-slate-100 text-slate-500 {% endif %}">
+                            {{ q.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-8 py-4 text-center">
+                        <div class="flex justify-center gap-2">
+                            <a href="#" class="p-2 bg-slate-100 text-slate-400 rounded-lg hover:bg-blue-600 hover:text-white transition-colors">
+                                <i class="fa fa-pencil-alt text-xs"></i>
+                            </a>
+                            <button class="p-2 bg-slate-100 text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-colors">
+                                <i class="fa fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-8 py-20 text-center">
+                        <i class="fa fa-door-closed text-4xl text-slate-100 mb-3"></i>
+                        <p class="text-slate-400 font-bold uppercase text-xs">Nenhum quarto cadastrado neste hotel.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
