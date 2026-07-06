@@ -57,12 +57,15 @@
                     </td>
                     <td class="px-8 py-4 text-center">
                         <div class="flex justify-center gap-2">
-                            <a href="#" class="p-2 bg-slate-100 text-slate-400 rounded-lg hover:bg-blue-600 hover:text-white transition-colors">
+                            <a href="{% url 'hotel:editar_quarto' q.id %}" class="p-2 bg-slate-100 text-slate-400 rounded-lg hover:bg-blue-600 hover:text-white transition-colors">
                                 <i class="fa fa-pencil-alt text-xs"></i>
                             </a>
-                            <button class="p-2 bg-slate-100 text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-colors">
-                                <i class="fa fa-trash-alt text-xs"></i>
-                            </button>
+                            <form method="post" action="{% url 'hotel:excluir_quarto' q.id %}" onsubmit="return confirm('Tem certeza que deseja excluir este quarto?')">
+                                {% csrf_token %}
+                                <button type="submit" class="p-2 bg-slate-100 text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-colors">
+                                    <i class="fa fa-trash-alt text-xs"></i>
+                                </button>
+                            </form>
                         </div>
                     </td>
                 </tr>

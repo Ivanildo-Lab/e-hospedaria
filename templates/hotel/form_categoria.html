@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block titulo_cabecalho %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<style>
+    #faixa-formset input[type="number"] {
+        width: 100%;
+        border: 2px solid #e2e8f0;
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 700;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    #faixa-formset input[type="number"]:focus {
+        border-color: #3b82f6;
+    }
+    #faixa-formset input[name*="qtd_hospedes"] { color: #334155; }
+    #faixa-formset input[name*="preco_diaria"] { color: #059669; }
+    #faixa-formset input[name*="preco_hora"] { color: #2563eb; }
+    #faixa-formset input[name*="DELETE"] { width: auto; border: none; padding: 0; }
+</style>
+
+<div class="max-w-3xl mx-auto bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10">
+    <div class="flex items-center gap-4 mb-10 border-b pb-6">
+        <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">
+            <i class="fa fa-tags text-xl"></i>
+        </div>
+        <div>
+            <h3 class="font-black text-slate-800 uppercase text-sm tracking-tighter">Dados da Categoria</h3>
+            <p class="text-xs text-slate-400 font-medium">Preencha os dados e as faixas de preço abaixo</p>
+        </div>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        {% for field in form %}
+        <div>
+            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+                <p class="text-rose-500 text-[10px] font-bold mt-1 ml-1">{{ field.errors.0 }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="border-t border-slate-100 pt-8">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-8 h-8 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center">
+                    <i class="fa fa-list-ol text-sm"></i>
+                </div>
+                <div>
+                    <h4 class="font-black text-slate-800 uppercase text-xs tracking-tighter">Preços por Quantidade de Hóspedes</h4>
+                    <p class="text-[10px] text-slate-400 font-medium">Defina o valor da diária e hora para cada quantidade</p>
+                </div>
+            </div>
+
+            {{ formset.management_form }}
+
+            <div id="faixa-formset" class="space-y-4">
+                {% for faixa_form in formset %}
+                <div class="faixa-row bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                    {{ faixa_form.id }}
+                    {% if faixa_form.instance.pk %}
+                    <div class="flex justify-end mb-2">
+                        <label class="flex items-center gap-1 text-[9px] font-bold text-rose-400 cursor-pointer hover:text-rose-600">
+                            {{ faixa_form.DELETE }} Remover
+                        </label>
+                    </div>
+                    {% endif %}
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Qtd. Hóspedes</label>
+                            {{ faixa_form.qtd_hospedes }}
+                            {% if faixa_form.qtd_hospedes.errors %}
+                                <p class="text-rose-500 text-[9px] font-bold mt-1">{{ faixa_form.qtd_hospedes.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Preço Diária (R$)</label>
+                            {{ faixa_form.preco_diaria }}
+                            {% if faixa_form.preco_diaria.errors %}
+                                <p class="text-rose-500 text-[9px] font-bold mt-1">{{ faixa_form.preco_diaria.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Preço Hora (R$)</label>
+                            {{ faixa_form.preco_hora }}
+                            {% if faixa_form.preco_hora.errors %}
+                                <p class="text-rose-500 text-[9px] font-bold mt-1">{{ faixa_form.preco_hora.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button type="button" onclick="addFaixa()" class="mt-4 text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                <i class="fa fa-plus"></i> Adicionar Preço
+            </button>
+        </div>
+
+        <div class="flex gap-4 pt-8 border-t border-slate-50">
+            <a href="{% url 'hotel:lista_categorias' %}" class="flex-1 text-center py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition">
+                CANCELAR
+            </a>
+            <button type="submit" class="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition">
+                SALVAR DADOS
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+let faixaIdx = {{ formset.total_form_count }};
+function addFaixa() {
+    const container = document.getElementById('faixa-formset');
+    const proto = container.querySelector('.faixa-row').cloneNode(true);
+    proto.querySelectorAll('input[type="number"], input[type="hidden"]').forEach(el => {
+        el.name = el.name.replace(/-\d+-/, '-' + faixaIdx + '-');
+        el.id = el.id.replace(/-\d+-/, '-' + faixaIdx + '-');
+        if (el.type !== 'hidden') el.value = '';
+    });
+    proto.querySelectorAll('input[type="checkbox"]').forEach(el => {
+        el.name = el.name.replace(/-\d+-/, '-' + faixaIdx + '-');
+        el.id = el.id.replace(/-\d+-/, '-' + faixaIdx + '-');
+        el.checked = false;
+    });
+    const deleteLabel = proto.querySelector('.flex.justify-end');
+    if (deleteLabel) deleteLabel.innerHTML = '';
+    container.appendChild(proto);
+    document.getElementById('id_faixas-TOTAL_FORMS').value = ++faixaIdx;
+}
+</script>
+{% endblock %}

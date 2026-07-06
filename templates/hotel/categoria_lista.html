@@ -5,19 +5,57 @@
         <h3 class="font-bold text-slate-800 uppercase text-xs tracking-widest">Categorias e Tarifas</h3>
         <a href="{% url 'hotel:nova_categoria' %}" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold">+ NOVA</a>
     </div>
-    <table class="w-full text-left">
-        <thead class="bg-slate-50 text-[10px] font-black uppercase text-slate-400">
-            <tr><th class="px-6 py-4">Nome</th><th class="px-6 py-4">Diária</th><th class="px-6 py-4">Hora</th></tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-            {% for c in categorias %}
-            <tr class="text-sm">
-                <td class="px-6 py-4 font-bold">{{ c.nome }}</td>
-                <td class="px-6 py-4 text-emerald-600 font-bold">R$ {{ c.preco_diaria }}</td>
-                <td class="px-6 py-4 text-blue-600 font-bold">R$ {{ c.preco_hora }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    
+    {% for c in categorias %}
+    <div class="border-b border-slate-100 last:border-b-0">
+        <div class="p-6 flex justify-between items-center">
+            <div>
+                <h4 class="font-black text-slate-800 text-sm">{{ c.nome }}</h4>
+                <p class="text-[10px] text-slate-400 font-bold">Diária base: R$ {{ c.preco_diaria }} | Hora base: R$ {{ c.preco_hora }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{% url 'hotel:editar_categoria' c.id %}" class="p-2 bg-slate-100 text-slate-400 rounded-lg hover:bg-blue-600 hover:text-white transition-colors">
+                    <i class="fa fa-pencil-alt text-xs"></i>
+                </a>
+                <form method="post" action="{% url 'hotel:excluir_categoria' c.id %}" onsubmit="return confirm('Tem certeza que deseja excluir esta categoria?')">
+                    {% csrf_token %}
+                    <button type="submit" class="p-2 bg-slate-100 text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-colors">
+                        <i class="fa fa-trash-alt text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% if c.faixas.all %}
+        <div class="px-6 pb-4">
+            <table class="w-full text-xs">
+                <thead class="bg-slate-50 text-[9px] font-black uppercase text-slate-400">
+                    <tr>
+                        <th class="px-3 py-2 text-left">Hóspedes</th>
+                        <th class="px-3 py-2 text-right">Diária</th>
+                        <th class="px-3 py-2 text-right">Hora</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    {% for f in c.faixas.all %}
+                    <tr>
+                        <td class="px-3 py-2 font-bold text-slate-600">{{ f.qtd_hospedes }}</td>
+                        <td class="px-3 py-2 text-right text-emerald-600 font-bold">R$ {{ f.preco_diaria }}</td>
+                        <td class="px-3 py-2 text-right text-blue-600 font-bold">R$ {{ f.preco_hora }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="px-6 pb-4">
+            <p class="text-[10px] text-amber-500 font-bold">Nenhum preço cadastrado. <a href="{% url 'hotel:editar_categoria' c.id %}" class="underline">Adicionar preços</a></p>
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="p-10 text-center">
+        <p class="text-slate-400 text-sm font-bold">Nenhuma categoria cadastrada.</p>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}

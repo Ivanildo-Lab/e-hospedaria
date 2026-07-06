@@ -8,7 +8,7 @@ from datetime import timedelta
 
 from core.models import ParametroSistema
 from .models import ConsumoHospedagem, Quarto, CategoriaQuarto, Hospedagem
-from .forms import CheckInForm, CategoriaQuartoForm, QuartoForm
+from .forms import CheckInForm, CategoriaQuartoForm, QuartoForm, FaixaPrecoFormSet
 # Importando os modelos das outras APPS
 from estoque.models import Produto, EstoqueFrigobar
 from financeiro.models import Conta, Lancamento, PlanoDeContas, Caixa, FormaPagamento 
@@ -41,15 +41,56 @@ def lista_categorias(request):
 def nova_categoria(request):
     if request.method == 'POST':
         form = CategoriaQuartoForm(request.POST)
-        if form.is_valid():
+        formset = FaixaPrecoFormSet(request.POST)
+        if form.is_valid() and formset.is_valid():
             cat = form.save(commit=False)
             cat.empresa = request.user.empresa
             cat.save()
+            formset.instance = cat
+            for f in formset.save(commit=False):
+                f.empresa = request.user.empresa
+                f.save()
+            formset.save_m2m()
             messages.success(request, "Categoria criada com sucesso!")
             return redirect('hotel:lista_categorias')
     else:
         form = CategoriaQuartoForm()
-    return render(request, 'hotel/form_config.html', {'form': form, 'titulo': 'Nova Categoria'})
+        formset = FaixaPrecoFormSet()
+    return render(request, 'hotel/form_categoria.html', {
+        'form': form, 'formset': formset, 'titulo': 'Nova Categoria', 'editando': False
+    })
+
+@login_required
+def editar_categoria(request, categoria_id):
+    cat = get_object_or_404(CategoriaQuarto, id=categoria_id, empresa=request.user.empresa)
+    if request.method == 'POST':
+        form = CategoriaQuartoForm(request.POST, instance=cat)
+        formset = FaixaPrecoFormSet(request.POST, instance=cat)
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            for f in formset.save(commit=False):
+                f.empresa = request.user.empresa
+                f.save()
+            formset.save_m2m()
+            messages.success(request, "Categoria atualizada com sucesso!")
+            return redirect('hotel:lista_categorias')
+    else:
+        form = CategoriaQuartoForm(instance=cat)
+        formset = FaixaPrecoFormSet(instance=cat)
+    return render(request, 'hotel/form_categoria.html', {
+        'form': form, 'formset': formset, 'titulo': f'Editar: {cat.nome}', 'editando': True
+    })
+
+@login_required
+def excluir_categoria(request, categoria_id):
+    cat = get_object_or_404(CategoriaQuarto, id=categoria_id, empresa=request.user.empresa)
+    if request.method == 'POST':
+        if cat.quarto_set.exists():
+            messages.error(request, "Não é possível excluir uma categoria vinculada a quartos!")
+        else:
+            cat.delete()
+            messages.success(request, "Categoria excluída!")
+    return redirect('hotel:lista_categorias')
 
 @login_required
 def lista_quartos(request):
@@ -70,17 +111,44 @@ def novo_quarto(request):
         form = QuartoForm(user=request.user)
     return render(request, 'hotel/form_config.html', {'form': form, 'titulo': 'Novo Quarto'})
 
+@login_required
+def editar_quarto(request, quarto_id):
+    quarto = get_object_or_404(Quarto, id=quarto_id, empresa=request.user.empresa)
+    if request.method == 'POST':
+        form = QuartoForm(request.POST, instance=quarto, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Quarto atualizado!")
+            return redirect('hotel:lista_quartos')
+    else:
+        form = QuartoForm(instance=quarto, user=request.user)
+    return render(request, 'hotel/form_config.html', {'form': form, 'titulo': f'Editar Quarto {quarto.numero}'})
+
+@login_required
+def excluir_quarto(request, quarto_id):
+    quarto = get_object_or_404(Quarto, id=quarto_id, empresa=request.user.empresa)
+    if request.method == 'POST':
+        if quarto.status == 'OCUPADO':
+            messages.error(request, "Não é possível excluir um quarto ocupado!")
+        else:
+            quarto.delete()
+            messages.success(request, "Quarto excluído!")
+    return redirect('hotel:lista_quartos')
+
 # --- OPERACIONAL (CHECK-IN E LIMPEZA) ---
 
 @login_required
 def realizar_checkin(request, quarto_id):
     quarto = get_object_or_404(Quarto, id=quarto_id, empresa=request.user.empresa)
+    faixas = quarto.categoria.faixas.all()
     if request.method == 'POST':
         form = CheckInForm(request.POST, user=request.user)
         if form.is_valid():
             hospedagem = form.save(commit=False)
             hospedagem.empresa = request.user.empresa
             hospedagem.quarto = quarto
+            qtd = hospedagem.quantidade_hospedes
+            hospedagem.valor_diaria_aplicada = quarto.categoria.preco_por_hospedes(qtd, hospedagem.tipo)
             hospedagem.save()
             quarto.status = 'OCUPADO'
             quarto.save()
@@ -88,7 +156,9 @@ def realizar_checkin(request, quarto_id):
             return redirect('hotel:mapa_quartos')
     else:
         form = CheckInForm(user=request.user)
-    return render(request, 'hotel/checkin_form.html', {'form': form, 'quarto': quarto})
+    return render(request, 'hotel/checkin_form.html', {
+        'form': form, 'quarto': quarto, 'faixas': faixas
+    })
 
 @login_required
 def liberar_limpeza(request, quarto_id):
@@ -114,14 +184,13 @@ def realizar_checkout(request, hospedagem_id):
                 duracao = data_saida - hospedagem.data_entrada
                 
                 if hospedagem.tipo == 'HORA':
-                    # Converte para Decimal para evitar erro de float
                     horas = Decimal(duracao.total_seconds() / 3600)
                     if horas < 1: horas = Decimal('1')
-                    hospedagem.valor_estadia = horas * quarto.categoria.preco_hora
+                    hospedagem.valor_estadia = horas * hospedagem.valor_diaria_aplicada
                 else:
                     dias = Decimal(duracao.days)
                     if dias < 1: dias = Decimal('1')
-                    hospedagem.valor_estadia = dias * quarto.categoria.preco_diaria
+                    hospedagem.valor_estadia = dias * hospedagem.valor_diaria_aplicada
 
                 # 2. PROCESSAMENTO DE CONSUMO E ESTOQUE
                 ids_produtos = request.POST.getlist('produtos[]')

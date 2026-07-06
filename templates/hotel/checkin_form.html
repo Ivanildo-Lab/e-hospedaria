@@ -14,11 +14,44 @@
             <p class="mt-2 text-[10px] text-slate-400">Não encontrou o hóspede? <a href="{% url 'novo_hospede' %}" class="text-blue-600 underline">Cadastre aqui</a></p>
         </div>
 
-        <div class="mb-8">
+        <div class="mb-6">
             <label class="block text-xs font-black text-slate-500 uppercase mb-2">Tipo de Estadia</label>
             {{ form.tipo }}
-            <p class="mt-2 text-[10px] text-slate-400">Diária: Valor fixo por dia | Hora: Valor calculado no checkout.</p>
         </div>
+
+        <div class="mb-6">
+            <label class="block text-xs font-black text-slate-500 uppercase mb-2">Quantidade de Hóspedes</label>
+            {{ form.quantidade_hospedes }}
+        </div>
+
+        {% if faixas %}
+        <div class="mb-8 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <label class="block text-[10px] font-black text-slate-400 uppercase mb-3">Tabela de Preços - {{ quarto.categoria.nome }}</label>
+            <table class="w-full text-xs">
+                <thead>
+                    <tr class="text-[9px] font-black uppercase text-slate-400">
+                        <th class="text-left pb-2">Hóspedes</th>
+                        <th class="text-right pb-2">Diária</th>
+                        <th class="text-right pb-2">Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in faixas %}
+                    <tr class="border-t border-slate-200 faixa-preco" data-qtd="{{ f.qtd_hospedes }}" data-diaria="{{ f.preco_diaria }}" data-hora="{{ f.preco_hora }}">
+                        <td class="py-2 font-bold text-slate-700">{{ f.qtd_hospedes }}</td>
+                        <td class="py-2 text-right text-emerald-600 font-bold">R$ {{ f.preco_diaria }}</td>
+                        <td class="py-2 text-right text-blue-600 font-bold">R$ {{ f.preco_hora }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div id="valorSelecionado" class="mt-3 pt-3 border-t border-slate-200 text-center hidden">
+                <span class="text-[10px] font-black text-slate-400 uppercase">Valor aplicado:</span>
+                <span id="valorAplicado" class="text-lg font-black text-emerald-600 ml-2">R$ 0,00</span>
+                <span id="tipoAplicado" class="text-[9px] font-bold text-slate-400 ml-1">/diária</span>
+            </div>
+        </div>
+        {% endif %}
 
         <div class="flex gap-4">
             <a href="{% url 'hotel:mapa_quartos' %}" class="flex-1 text-center py-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">CANCELAR</a>
@@ -26,4 +59,43 @@
         </div>
     </form>
 </div>
+
+<script>
+const inputQtd = document.querySelector('[name="quantidade_hospedes"]');
+const tipoSelect = document.querySelector('[name="tipo"]');
+const faixas = document.querySelectorAll('.faixa-preco');
+const valorDiv = document.getElementById('valorSelecionado');
+const valorAplicado = document.getElementById('valorAplicado');
+const tipoAplicado = document.getElementById('tipoAplicado');
+
+function atualizarValor() {
+    const qtd = parseInt(inputQtd.value) || 1;
+    const tipo = tipoSelect.value;
+    let melhorFaixa = null;
+    
+    faixas.forEach(row => {
+        const qtdFaixa = parseInt(row.dataset.qtd);
+        row.classList.remove('bg-emerald-50');
+        if (qtdFaixa <= qtd) {
+            if (!melhorFaixa || qtdFaixa > parseInt(melhorFaixa.dataset.qtd)) {
+                melhorFaixa = row;
+            }
+        }
+    });
+    
+    if (melhorFaixa) {
+        const preco = tipo === 'HORA' ? parseFloat(melhorFaixa.dataset.hora) : parseFloat(melhorFaixa.dataset.diaria);
+        valorAplicado.textContent = 'R$ ' + preco.toFixed(2).replace('.', ',');
+        tipoAplicado.textContent = tipo === 'HORA' ? '/hora' : '/diária';
+        valorDiv.classList.remove('hidden');
+        melhorFaixa.classList.add('bg-emerald-50');
+    } else {
+        valorDiv.classList.add('hidden');
+    }
+}
+
+inputQtd.addEventListener('input', atualizarValor);
+tipoSelect.addEventListener('change', atualizarValor);
+atualizarValor();
+</script>
 {% endblock %}

@@ -26,6 +26,7 @@
             <div class="mb-3">
                 <span class="text-[9px] font-bold uppercase text-slate-400 block leading-none">Hóspede</span>
                 <p class="text-[11px] font-bold text-slate-600 truncate leading-tight">{{ quarto.hospedagem_atual.hospede.nome }}</p>
+                <p class="text-[9px] font-bold text-slate-400 mt-1">{{ quarto.hospedagem_atual.quantidade_hospedes }} hóspede{{ quarto.hospedagem_atual.quantidade_hospedes|pluralize }}</p>
             </div>
             {% endif %}
 
@@ -43,8 +44,9 @@
                         '{{ quarto.numero }}', 
                         '{{ quarto.hospedagem_atual.hospede.nome }}', 
                         '{{ quarto.hospedagem_atual.data_entrada|date:'d/m H:i' }}',
-                        '{% if quarto.hospedagem_atual.tipo == 'HORA' %}{{ quarto.categoria.preco_hora }}{% else %}{{ quarto.categoria.preco_diaria }}{% endif %}',
-                        '{{ quarto.hospedagem_atual.get_tipo_display }}'
+                        '{{ quarto.hospedagem_atual.valor_diaria_aplicada }}',
+                        '{{ quarto.hospedagem_atual.get_tipo_display }}',
+                        '{{ quarto.hospedagem_atual.quantidade_hospedes }}'
                     )" class="flex items-center justify-center gap-2 w-full py-3 bg-rose-600 text-white text-xs font-black rounded-xl hover:bg-rose-700 shadow-lg transition">FECHAR CONTA</button>
                 {% elif quarto.status == 'LIMPEZA' %}
                     <a href="{% url 'hotel:liberar_limpeza' quarto.id %}" class="flex items-center justify-center gap-2 w-full py-3 bg-amber-600 text-white text-xs font-black rounded-xl hover:bg-amber-700 transition">LIBERAR</a>
@@ -74,6 +76,8 @@
                         <div class="grid grid-cols-2 gap-4 mt-2 pt-2 border-t text-[10px]">
                             <div><span class="text-slate-400 uppercase">Entrada:</span> <span id="modalEntrada">--</span></div>
                             <div class="text-right"><span id="modalTipoEstadia" class="bg-blue-100 text-blue-700 px-2 rounded-full font-black">--</span></div>
+                            <div><span class="text-slate-400 uppercase">Hóspedes:</span> <span id="modalQtdHospedes" class="font-bold">--</span></div>
+                            <div class="text-right"><span class="text-slate-400 uppercase">Diária: </span><span id="modalValorDiaria" class="font-bold text-emerald-600">R$ 0,00</span></div>
                         </div>
                     </div>
 
@@ -136,13 +140,15 @@ let itensConsumo = [];
 let listaPagos = [];
 let precoBaseEstadia = 0;
 
-function abrirCheckout(id, quarto, hospede, entrada, precoBase, tipo) {
+function abrirCheckout(id, quarto, hospede, entrada, precoBase, tipo, qtdHospedes) {
     itensConsumo = []; listaPagos = [];
     precoBaseEstadia = parseFloat(precoBase.replace(',', '.'));
     document.getElementById('modalQuartoNum').innerText = "UNIDADE " + quarto;
     document.getElementById('modalHospedeNome').innerText = hospede;
     document.getElementById('modalEntrada').innerText = entrada;
     document.getElementById('modalTipoEstadia').innerText = tipo;
+    document.getElementById('modalQtdHospedes').innerText = qtdHospedes;
+    document.getElementById('modalValorDiaria').innerText = "R$ " + precoBaseEstadia.toFixed(2).replace('.', ',');
     document.getElementById('formCheckout').action = "/hotel/checkout/" + id + "/";
     renderLista();
     document.getElementById('modalCheckout').classList.remove('hidden');
