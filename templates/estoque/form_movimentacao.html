@@ -8,15 +8,34 @@
     <form method="post" class="space-y-6" id="formMovimento">
         {% csrf_token %}
         
-        <!-- Linha 1: Produto -->
+        <!-- Linha 1: Produto com Busca -->
         <div class="grid grid-cols-1 gap-6">
-            <div>
+            <div class="relative">
                 <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Produto</label>
-                {{ form.produto }}
+                <input type="text" id="buscaProduto" placeholder="Digite para buscar o produto..." autocomplete="off"
+                    class="w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none transition-all">
+                <div id="resultadosProduto" class="absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 hidden max-h-60 overflow-y-auto"></div>
+                <input type="hidden" name="produto" id="produtoId" value="">
+                <div id="produtoSelecionado" class="mt-2 hidden">
+                    <span class="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">
+                        <span id="produtoNome"></span>
+                        <span id="produtoEstoque" class="text-[9px] text-blue-500"></span>
+                        <button type="button" onclick="limparProduto()" class="text-blue-400 hover:text-blue-600">&times;</button>
+                    </span>
+                </div>
             </div>
-            <div>
+            <div class="relative">
                 <label class="text-[10px] font-black text-slate-400 uppercase ml-1 mb-1 block">Fornecedor</label>
-                {{ form.fornecedor }}
+                <input type="text" id="buscaFornecedor" placeholder="Digite para buscar o fornecedor..." autocomplete="off"
+                    class="w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none transition-all">
+                <div id="resultadosFornecedor" class="absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 hidden max-h-60 overflow-y-auto"></div>
+                <input type="hidden" name="fornecedor" id="fornecedorId" value="">
+                <div id="fornecedorSelecionado" class="mt-2 hidden">
+                    <span class="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">
+                        <span id="fornecedorNome"></span>
+                        <button type="button" onclick="limparFornecedor()" class="text-emerald-400 hover:text-emerald-600">&times;</button>
+                    </span>
+                </div>
             </div>
         </div>
 
@@ -56,7 +75,7 @@
             </div>
         </div>
 
-        <!-- Oculto para o usuário não mexer na tela de entrada -->
+        <!-- Oculto -->
         <div class="hidden">{{ form.tipo }}</div>
 
         <div>
@@ -73,7 +92,97 @@
 </div>
 
 <script>
-    // Seletores
+    // === BUSCA DE PRODUTO ===
+    const inputBuscaProduto = document.getElementById('buscaProduto');
+    const resultadosProduto = document.getElementById('resultadosProduto');
+    const produtoIdInput = document.getElementById('produtoId');
+    const produtoSelecionado = document.getElementById('produtoSelecionado');
+    let debounceProduto = null;
+
+    inputBuscaProduto.addEventListener('input', function() {
+        clearTimeout(debounceProduto);
+        const q = this.value.trim();
+        if (q.length < 2) { resultadosProduto.classList.add('hidden'); return; }
+        debounceProduto = setTimeout(() => {
+            fetch(`/estoque/api/produtos/buscar/?q=${encodeURIComponent(q)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.length === 0) { resultadosProduto.classList.add('hidden'); return; }
+                    resultadosProduto.innerHTML = data.map(p =>
+                        `<div class="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0" onclick="selecionarProduto(${p.id}, '${p.nome.replace(/'/g, "\\'")}', ${p.estoque})">
+                            <span class="text-sm font-bold text-slate-700">${p.nome}</span>
+                            <span class="text-[10px] text-slate-400 ml-2">Estoque: ${p.estoque}</span>
+                        </div>`
+                    ).join('');
+                    resultadosProduto.classList.remove('hidden');
+                });
+        }, 300);
+    });
+
+    function selecionarProduto(id, nome, estoque) {
+        produtoIdInput.value = id;
+        document.getElementById('produtoNome').textContent = nome;
+        document.getElementById('produtoEstoque').textContent = `Estoque: ${estoque}`;
+        produtoSelecionado.classList.remove('hidden');
+        inputBuscaProduto.value = '';
+        resultadosProduto.classList.add('hidden');
+    }
+
+    function limparProduto() {
+        produtoIdInput.value = '';
+        produtoSelecionado.classList.add('hidden');
+    }
+
+    // === BUSCA DE FORNECEDOR ===
+    const inputBuscaFornecedor = document.getElementById('buscaFornecedor');
+    const resultadosFornecedor = document.getElementById('resultadosFornecedor');
+    const fornecedorIdInput = document.getElementById('fornecedorId');
+    const fornecedorSelecionado = document.getElementById('fornecedorSelecionado');
+    let debounceFornecedor = null;
+
+    inputBuscaFornecedor.addEventListener('input', function() {
+        clearTimeout(debounceFornecedor);
+        const q = this.value.trim();
+        if (q.length < 2) { resultadosFornecedor.classList.add('hidden'); return; }
+        debounceFornecedor = setTimeout(() => {
+            fetch(`/estoque/api/fornecedores/buscar/?q=${encodeURIComponent(q)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.length === 0) { resultadosFornecedor.classList.add('hidden'); return; }
+                    resultadosFornecedor.innerHTML = data.map(f =>
+                        `<div class="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50 last:border-0" onclick="selecionarFornecedor(${f.id}, '${f.nome.replace(/'/g, "\\'")}')">
+                            <span class="text-sm font-bold text-slate-700">${f.nome}</span>
+                        </div>`
+                    ).join('');
+                    resultadosFornecedor.classList.remove('hidden');
+                });
+        }, 300);
+    });
+
+    function selecionarFornecedor(id, nome) {
+        fornecedorIdInput.value = id;
+        document.getElementById('fornecedorNome').textContent = nome;
+        fornecedorSelecionado.classList.remove('hidden');
+        inputBuscaFornecedor.value = '';
+        resultadosFornecedor.classList.add('hidden');
+    }
+
+    function limparFornecedor() {
+        fornecedorIdInput.value = '';
+        fornecedorSelecionado.classList.add('hidden');
+    }
+
+    // Fechar dropdowns ao clicar fora
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#buscaProduto') && !e.target.closest('#resultadosProduto')) {
+            resultadosProduto.classList.add('hidden');
+        }
+        if (!e.target.closest('#buscaFornecedor') && !e.target.closest('#resultadosFornecedor')) {
+            resultadosFornecedor.classList.add('hidden');
+        }
+    });
+
+    // === CÁLCULO E PAGAMENTO ===
     const inputQtd = document.querySelector('input[name="quantidade"]');
     const inputVal = document.querySelector('input[name="valor_unitario"]');
     const displayTotal = document.getElementById('displayTotal');
@@ -81,7 +190,6 @@
     const divCaixa = document.getElementById('div_caixa');
     const divParcelas = document.getElementById('div_parcelas');
 
-    // Função de Cálculo do Total
     function calcular() {
         let qtd = parseFloat(inputQtd.value) || 0;
         let val = parseFloat(inputVal.value.replace(',', '.')) || 0;
@@ -89,7 +197,6 @@
         displayTotal.innerText = "R$ " + total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
 
-    // Função para mostrar/esconder campos de pagamento
     function toggleCampos() {
         if (selectForma.value === 'V') {
             divCaixa.classList.remove('hidden');
@@ -100,14 +207,11 @@
         }
     }
 
-    // Eventos
     inputQtd.addEventListener('input', calcular);
     inputVal.addEventListener('input', calcular);
     selectForma.addEventListener('change', toggleCampos);
     
-    // Executa ao carregar
     window.onload = function() {
-        // Forçamos o tipo para Entrada
         document.querySelector('select[name="tipo"]').value = 'E';
         toggleCampos();
         calcular();

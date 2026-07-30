@@ -2,10 +2,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import F
+from django.db.models import F, Q
+from django.db import transaction
+from django.http import JsonResponse, HttpResponse
 from .models import Produto, MovimentacaoEstoque, EstoqueFrigobar
 from .forms import ProdutoForm, MovimentacaoForm
 from datetime import timedelta
+from financeiro.models import Conta, Lancamento, PlanoDeContas
 
 
 @login_required
@@ -48,61 +51,23 @@ def registrar_movimentacao(request):
     if request.method == 'POST':
         form = MovimentacaoForm(request.POST, user=request.user)
         if form.is_valid():
-            m = form.save(commit=False)
-            m.empresa = request.user.empresa
-            m.save()
-            messages.success(request, "Movimentação de estoque registrada!")
-            return redirect('estoque:lista_produtos')
-    else:
-        form = MovimentacaoForm(user=request.user)
-    return render(request, 'estoque/form_movimentacao.html', {'form': form})
-
-@login_required
-def relatorio_reposicao(request):
-    itens = EstoqueFrigobar.objects.filter(
-        empresa=request.user.empresa,
-        quantidade_atual__lt=F('capacidade_maxima')
-    ).select_related('quarto', 'produto')
-    
-    for item in itens:
-        item.necessidade = item.capacidade_maxima - item.quantidade_atual
-        
-    return render(request, 'estoque/relatorio_reposicao.html', {'itens': itens})
-
-# estoque/views.py
-from datetime import timedelta
-from financeiro.models import Conta, Lancamento, PlanoDeContas
-
-# estoque/views.py
-from datetime import timedelta
-from financeiro.models import Conta, Lancamento, PlanoDeContas
-from django.db import transaction # Para garantir que salve tudo ou nada
-
-@login_required
-def registrar_movimentacao(request):
-    if request.method == 'POST':
-        form = MovimentacaoForm(request.POST, user=request.user)
-        if form.is_valid():
             try:
-                with transaction.atomic(): # Segurança para o banco de dados
+                with transaction.atomic():
                     m = form.save(commit=False)
                     m.empresa = request.user.empresa
-                    m.save() 
+                    m.save()
 
-                    # SÓ INTEGRA SE FOR ENTRADA (COMPRA)
                     if m.tipo == 'E' and m.fornecedor:
-                        # --- LÓGICA DO PLANO DE CONTAS PADRÃO ---
-                        # Busca ou cria a categoria para evitar o erro de 'Column cannot be null'
                         plano, created = PlanoDeContas.objects.get_or_create(
                             empresa=request.user.empresa,
                             nome="COMPRA DE MERCADORIAS / ESTOQUE",
-                            tipo='D', # Despesa
+                            tipo='D',
                             defaults={'codigo': '2.01'}
                         )
 
                         total_compra = m.quantidade * m.valor_unitario
 
-                        if m.forma_pagamento == 'V': # À VISTA
+                        if m.forma_pagamento == 'V':
                             caixa = form.cleaned_data.get('caixa_pagamento')
                             if not caixa:
                                 messages.error(request, "Para compras à vista, selecione o caixa de saída.")
@@ -117,8 +82,7 @@ def registrar_movimentacao(request):
                                 valor=total_compra,
                                 tipo='D'
                             )
-                        
-                        else: # A PRAZO (PARCELADO)
+                        else:
                             qtd_parcelas = m.num_parcelas or 1
                             valor_parcela = total_compra / qtd_parcelas
                             for i in range(qtd_parcelas):
@@ -137,9 +101,75 @@ def registrar_movimentacao(request):
                 return redirect('estoque:lista_produtos')
 
             except Exception as e:
-                # Se algo der errado na integração financeira, o estoque também não é alterado (atomic)
                 messages.error(request, f"Erro ao processar financeiro: {str(e)}")
     else:
         form = MovimentacaoForm(user=request.user)
-    
     return render(request, 'estoque/form_movimentacao.html', {'form': form})
+
+
+@login_required
+def relatorio_reposicao(request):
+    itens = EstoqueFrigobar.objects.filter(
+        empresa=request.user.empresa,
+        quantidade_atual__lt=F('capacidade_maxima')
+    ).select_related('quarto', 'produto')
+    for item in itens:
+        item.necessidade = item.capacidade_maxima - item.quantidade_atual
+    return render(request, 'estoque/relatorio_reposicao.html', {'itens': itens})
+
+
+@login_required
+def buscar_produtos(request):
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse([], safe=False)
+    produtos = Produto.objects.filter(
+        empresa=request.user.empresa, tipo='P'
+    ).filter(
+        Q(nome__icontains=q) | Q(descricao__icontains=q)
+    ).order_by('nome')[:20]
+    data = [{'id': p.id, 'nome': p.nome, 'estoque': p.estoque_deposito, 'custo': str(p.valor_custo)} for p in produtos]
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+def buscar_fornecedores(request):
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse([], safe=False)
+    from cadastros.models import Cadastro
+    fornecedores = Cadastro.objects.filter(
+        empresa=request.user.empresa, papel__in=['FORNECEDOR', 'AMBOS'],
+        nome__icontains=q
+    ).order_by('nome')[:20]
+    data = [{'id': f.id, 'nome': f.nome} for f in fornecedores]
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+def relatorio_estoque_pdf(request):
+    from weasyprint import HTML
+
+    produtos = Produto.objects.filter(
+        empresa=request.user.empresa, tipo='P'
+    ).order_by('nome')
+
+    total_itens = 0
+    valor_total_estoque = 0
+    for p in produtos:
+        p.valor_total_item = p.estoque_deposito * p.valor_custo
+        p.status_estoque = 'CRITICO' if p.estoque_deposito <= 0 else 'BAIXO' if p.estoque_deposito <= p.estoque_minimo else 'OK'
+        total_itens += p.estoque_deposito
+        valor_total_estoque += p.valor_total_item
+
+    html_string = render(request, 'estoque/relatorio_estoque_pdf.html', {
+        'produtos': produtos,
+        'empresa': request.user.empresa,
+        'total_itens': total_itens,
+        'valor_total_estoque': valor_total_estoque,
+    }).content.decode('utf-8')
+
+    pdf = HTML(string=html_string).write_pdf()
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="estoque_atual.pdf"'
+    return response

@@ -35,24 +35,6 @@ class EstoqueFrigobar(ModeloSaaS):
     def __str__(self):
         return f"{self.produto.nome} - Quarto {self.quarto.numero}"
 
-class MovimentacaoEstoque(ModeloSaaS):
-    TIPO_MOV = [('E', 'Entrada (Compra/Ajuste)'), ('S', 'Saída (Perda/Ajuste)')]
-    
-    produto = models.ForeignKey(Produto, on_delete=models.CASCADE, limit_choices_to={'tipo': 'P'})
-    quantidade = models.IntegerField()
-    tipo = models.CharField(max_length=1, choices=TIPO_MOV)
-    data = models.DateTimeField(auto_now_add=True)
-    observacao = models.CharField(max_length=255, blank=True)
-
-    def save(self, *args, **kwargs):
-        if not self.pk:
-            if self.tipo == 'E':
-                self.produto.estoque_deposito += self.quantidade
-            else:
-                self.produto.estoque_deposito -= self.quantidade
-            self.produto.save()
-        super().save(*args, **kwargs)
-
 class Inventario(ModeloSaaS):
     """Snapshot para fechamento de estoque"""
     data_fechamento = models.DateTimeField(auto_now_add=True)
@@ -70,7 +52,6 @@ class MovimentacaoEstoque(ModeloSaaS):
     quantidade = models.IntegerField()
     tipo = models.CharField(max_length=1, choices=TIPO_MOV)
     
-    # NOVOS CAMPOS PARA INTEGRAÇÃO FINANCEIRA
     fornecedor = models.ForeignKey('cadastros.Cadastro', on_delete=models.PROTECT, null=True, blank=True, limit_choices_to={'papel__in': ['FORNECEDOR', 'AMBOS']})
     valor_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     forma_pagamento = models.CharField(max_length=1, choices=FORMA_PAGAMENTO, null=True, blank=True)
@@ -82,7 +63,6 @@ class MovimentacaoEstoque(ModeloSaaS):
         if not self.pk:
             if self.tipo == 'E':
                 self.produto.estoque_deposito += self.quantidade
-                # Atualiza o valor de custo do produto com base na última compra
                 self.produto.valor_custo = self.valor_unitario
             else:
                 self.produto.estoque_deposito -= self.quantidade

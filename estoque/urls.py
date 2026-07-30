@@ -9,9 +9,11 @@ urlpatterns = [
     path('produtos/novo/', views.novo_produto, name='novo_produto'),
     path('produtos/editar/<int:pk>/', views.editar_produto, name='editar_produto'),
     
-    # Rota de movimentação (Entrada/Saída)
     path('movimentacao/', views.registrar_movimentacao, name='registrar_movimentacao'),
     
-    # Relatório de Reposição
     path('reposicao/', views.relatorio_reposicao, name='relatorio_reposicao'),
+    path('relatorio-pdf/', views.relatorio_estoque_pdf, name='relatorio_estoque_pdf'),
+    
+    path('api/produtos/buscar/', views.buscar_produtos, name='buscar_produtos'),
+    path('api/fornecedores/buscar/', views.buscar_fornecedores, name='buscar_fornecedores'),
 ]

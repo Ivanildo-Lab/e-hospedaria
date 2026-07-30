@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Estoque - {{ empresa.nome }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 12mm 15mm 20mm 15mm;
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 8px;
+                color: #94a3b8;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 9px;
+            color: #1e293b;
+            line-height: 1.4;
+        }
+
+        /* === CABEÇALHO === */
+        .header {
+            text-align: center;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #0f172a;
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #0f172a;
+        }
+        .header h1 {
+            font-size: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #0f172a;
+            margin-bottom: 3px;
+        }
+        .header .subtitle {
+            font-size: 11px;
+            font-weight: 600;
+            color: #334155;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .header .meta {
+            font-size: 8px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+        .header .meta span {
+            margin: 0 8px;
+        }
+
+        /* === RESUMO === */
+        .summary {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .summary-box {
+            flex: 1;
+            text-align: center;
+            padding: 10px 8px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 6px;
+            background: #f8fafc;
+        }
+        .summary-box .label {
+            font-size: 7px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #64748b;
+            letter-spacing: 0.8px;
+            margin-bottom: 3px;
+        }
+        .summary-box .value {
+            font-size: 16px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .summary-box.accent {
+            background: #0f172a;
+            border-color: #0f172a;
+        }
+        .summary-box.accent .label { color: #94a3b8; }
+        .summary-box.accent .value { color: #ffffff; }
+
+        /* === TABELA === */
+        .table-container {
+            margin-bottom: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5px;
+        }
+        thead th {
+            background: #0f172a;
+            color: #ffffff;
+            padding: 7px 6px;
+            text-align: left;
+            font-size: 7.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        thead th:first-child { border-radius: 4px 0 0 0; }
+        thead th:last-child { border-radius: 0 4px 0 0; }
+
+        tbody td {
+            padding: 6px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tbody tr:nth-child(even) { background: #f8fafc; }
+        tbody tr:last-child td:first-child { border-radius: 0 0 0 4px; }
+        tbody tr:last-child td:last-child { border-radius: 0 0 4px 0; }
+
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: 700; }
+        .font-mono { font-family: 'Consolas', 'Courier New', monospace; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 7px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-ok { background: #dcfce7; color: #166534; }
+        .status-baixo { background: #fef3c7; color: #92400e; }
+        .status-critico { background: #fee2e2; color: #991b1b; }
+
+        .row-total {
+            background: #f1f5f9 !important;
+            font-weight: 700;
+        }
+        .row-total td {
+            border-top: 2px solid #0f172a;
+            border-bottom: 2px solid #0f172a;
+            padding: 8px 6px;
+        }
+
+        /* === RODAPÉ / ASSINATURA === */
+        .footer {
+            margin-top: 25px;
+            page-break-inside: avoid;
+        }
+        .footer-title {
+            font-size: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #64748b;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .signature-block {
+            display: flex;
+            justify-content: space-between;
+            gap: 30px;
+            margin-top: 35px;
+            padding: 0 10px;
+        }
+        .sig-field {
+            flex: 1;
+            text-align: center;
+        }
+        .sig-field .line {
+            border-top: 1px solid #475569;
+            margin-bottom: 6px;
+            margin-top: 45px;
+        }
+        .sig-field .field-label {
+            font-size: 8px;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .sig-field .field-sub {
+            font-size: 7.5px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .obs-box {
+            margin-top: 20px;
+            padding: 10px 12px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        .obs-box .obs-title {
+            font-size: 7.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        .obs-box .obs-lines {
+            border-top: 1px solid #e2e8f0;
+            margin-top: 8px;
+            padding-top: 8px;
+        }
+        .obs-line {
+            border-bottom: 1px solid #e2e8f0;
+            height: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CABEÇALHO -->
+    <div class="header">
+        <h1>{{ empresa.nome }}</h1>
+        <div class="subtitle">Relatório de Estoque Atual</div>
+        <div class="meta">
+            <span>Emitido em: {% now "d/m/Y" %}</span>
+            <span>|</span>
+            <span>Hora: {% now "H:i" %}</span>
+            <span>|</span>
+            <span>Produtos Físicos</span>
+        </div>
+    </div>
+
+    <!-- RESUMO -->
+    <div class="summary">
+        <div class="summary-box">
+            <div class="label">Total de Produtos</div>
+            <div class="value">{{ produtos|length }}</div>
+        </div>
+        <div class="summary-box">
+            <div class="label">Itens em Estoque</div>
+            <div class="value">{{ total_itens }}</div>
+        </div>
+        <div class="summary-box accent">
+            <div class="label">Valor Total do Estoque</div>
+            <div class="value">R$ {{ valor_total_estoque|floatformat:2 }}</div>
+        </div>
+    </div>
+
+    <!-- TABELA -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 4%">#</th>
+                    <th style="width: 28%">Produto</th>
+                    <th style="width: 11%" class="text-right">Custo Unit.</th>
+                    <th style="width: 11%" class="text-right">Preço Venda</th>
+                    <th style="width: 9%" class="text-center">Est. Atual</th>
+                    <th style="width: 9%" class="text-center">Est. Mín.</th>
+                    <th style="width: 13%" class="text-right">Valor Total</th>
+                    <th style="width: 8%" class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in produtos %}
+                <tr>
+                    <td class="text-center font-mono">{{ forloop.counter }}</td>
+                    <td class="font-bold">{{ p.nome }}</td>
+                    <td class="text-right font-mono">R$ {{ p.valor_custo|floatformat:2 }}</td>
+                    <td class="text-right font-mono">R$ {{ p.preco_venda|floatformat:2 }}</td>
+                    <td class="text-center font-bold font-mono">{{ p.estoque_deposito }}</td>
+                    <td class="text-center font-mono">{{ p.estoque_minimo }}</td>
+                    <td class="text-right font-bold font-mono">R$ {{ p.valor_total_item|floatformat:2 }}</td>
+                    <td class="text-center">
+                        {% if p.status_estoque == 'OK' %}
+                            <span class="status-badge status-ok">OK</span>
+                        {% elif p.status_estoque == 'BAIXO' %}
+                            <span class="status-badge status-baixo">BAIXO</span>
+                        {% else %}
+                            <span class="status-badge status-critico">CRÍTICO</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center" style="padding: 25px; color: #94a3b8;">
+                        Nenhum produto físico cadastrado no estoque.
+                    </td>
+                </tr>
+                {% endfor %}
+
+                {% if produtos %}
+                <tr class="row-total">
+                    <td colspan="4" class="text-right" style="font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Total Geral</td>
+                    <td class="text-center font-bold font-mono">{{ total_itens }}</td>
+                    <td></td>
+                    <td class="text-right font-bold font-mono">R$ {{ valor_total_estoque|floatformat:2 }}</td>
+                    <td></td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- RODAPÉ -->
+    <div class="footer">
+        <div class="footer-title">Conferência e Assinaturas</div>
+
+        <div class="signature-block">
+            <div class="sig-field">
+                <div class="line"></div>
+                <div class="field-label">Responsável pela Conferência</div>
+                <div class="field-sub">Nome e Carimbo</div>
+            </div>
+            <div class="sig-field">
+                <div class="line"></div>
+                <div class="field-label">Assinatura</div>
+                <div class="field-sub">Assine acima</div>
+            </div>
+            <div class="sig-field">
+                <div class="line"></div>
+                <div class="field-label">Gerente / Supervisor</div>
+                <div class="field-sub">Nome e Carimbo</div>
+            </div>
+        </div>
+
+        <div class="obs-box">
+            <div class="obs-title">Observações</div>
+            <div class="obs-lines">
+                <div class="obs-line"></div>
+                <div class="obs-line"></div>
+                <div class="obs-line"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
