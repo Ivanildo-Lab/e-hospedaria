@@ -143,6 +143,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 LOGIN_REDIRECT_URL = '/hotel/mapa/'
 LOGOUT_REDIRECT_URL = 'home'        # Nome da URL da tela inicial
 LOGIN_URL = 'login'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 LANGUAGE_CODE = 'pt-br'
 USE_L10N = True  # Permite localização de formatos
 DATE_INPUT_FORMATS = ('%d/%m/%Y', '%Y-%m-%d') # Diz ao Django para aceitar padrão BR
