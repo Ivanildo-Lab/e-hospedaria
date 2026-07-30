@@ -52,7 +52,7 @@
                  <a href="{% url 'hotel:historico_hospedagens' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-history mr-3 w-5 text-emerald-500"></i> Histórico Hospedagem/ Reimpressão
                 </a>
-               <!--  Logística e Compras -->
+               <!-- Logística -->
                 <p class="text-slate-500 text-[10px] uppercase font-black px-3 mt-6 mb-2 tracking-widest">Logística</p>
                 <a href="{% url 'lista_fornecedores' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-truck-moving mr-3 w-5 text-orange-400"></i> Fornecedores
@@ -60,6 +60,11 @@
                 <a href="{% url 'estoque:lista_produtos' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-boxes mr-3 w-5 text-orange-400"></i> Estoque / Serviços
                 </a>
+                <a href="{% url 'estoque:relatorio_reposicao' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
+                    <i class="fa fa-clipboard-list mr-3 w-5 text-orange-400"></i> Reposição Frigobar
+                </a>
+
+                <!-- Financeiro -->
                 <p class="text-slate-500 text-[10px] uppercase font-black px-3 mt-6 mb-2 tracking-widest">Financeiro</p>
                 <a href="{% url 'financeiro:lista_receber' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-arrow-up mr-3 w-5 text-green-500"></i> Recebimentos
@@ -78,20 +83,15 @@
                 </a>
                 <a href="{% url 'financeiro:lista_caixas' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-wallet mr-3 w-5 text-amber-500"></i> Contas e Caixas
-                </a>                
+                </a>
+
+                <!-- Configuração -->
                 <p class="text-slate-500 text-[10px] uppercase font-black px-3 mt-6 mb-2 tracking-widest">Configuração</p>
                 <a href="{% url 'hotel:lista_quartos' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-door-open mr-3 w-5 text-indigo-400"></i> Quartos
                 </a>
                 <a href="{% url 'hotel:lista_categorias' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
                     <i class="fa fa-tags mr-3 w-5 text-indigo-400"></i> Categorias/Tarifas
-                </a>
-                <p class="text-slate-500 text-[10px] uppercase font-black px-3 mt-6 mb-2 tracking-widest">Logística</p>
-                <a href="{% url 'estoque:lista_produtos' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
-                    <i class="fa fa-boxes mr-3 w-5 text-orange-400"></i> Produtos / Estoque
-                </a>
-                <a href="{% url 'estoque:relatorio_reposicao' %}" class="flex items-center text-slate-300 py-3 px-3 sidebar-item rounded-xl text-sm font-bold">
-                    <i class="fa fa-clipboard-list mr-3 w-5 text-orange-400"></i> Reposição Frigobar
                 </a>
 
             </nav>
