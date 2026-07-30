@@ -2,18 +2,27 @@ from django.db import migrations, models
 
 
 def forwards(apps, schema_editor):
-    schema_editor.execute(
-        "ALTER TABLE hotel_faixaprecocategoria ADD COLUMN qtd_hospedes INT UNSIGNED NOT NULL DEFAULT 1"
-    )
-    schema_editor.execute(
-        "UPDATE hotel_faixaprecocategoria SET qtd_hospedes = qtd_hospedes_min"
-    )
-    schema_editor.execute(
-        "ALTER TABLE hotel_faixaprecocategoria DROP COLUMN qtd_hospedes_min"
-    )
-    schema_editor.execute(
-        "ALTER TABLE hotel_faixaprecocategoria DROP COLUMN qtd_hospedes_max"
-    )
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute("SHOW COLUMNS FROM hotel_faixaprecocategoria LIKE 'qtd_hospedes'")
+        col_existe = cursor.fetchone()
+
+        if not col_existe:
+            cursor.execute(
+                "ALTER TABLE hotel_faixaprecocategoria ADD COLUMN qtd_hospedes INT UNSIGNED NOT NULL DEFAULT 1"
+            )
+            cursor.execute(
+                "UPDATE hotel_faixaprecocategoria SET qtd_hospedes = qtd_hospedes_min"
+            )
+
+        cursor.execute("SHOW COLUMNS FROM hotel_faixaprecocategoria LIKE 'qtd_hospedes_min'")
+        col_antigo_min = cursor.fetchone()
+        if col_antigo_min:
+            cursor.execute("ALTER TABLE hotel_faixaprecocategoria DROP COLUMN qtd_hospedes_min")
+
+        cursor.execute("SHOW COLUMNS FROM hotel_faixaprecocategoria LIKE 'qtd_hospedes_max'")
+        col_antigo_max = cursor.fetchone()
+        if col_antigo_max:
+            cursor.execute("ALTER TABLE hotel_faixaprecocategoria DROP COLUMN qtd_hospedes_max")
 
 
 class Migration(migrations.Migration):
