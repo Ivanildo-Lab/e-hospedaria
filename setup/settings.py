@@ -13,20 +13,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+ON_PYTHONANYWHERE = 'PYTHONANYWHERE_DOMAIN' in os.environ
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-p6n8g*z)h@12^mnp0l&o2#@qfvwwsm=14==osg4t7m!ptg#2%^'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+DEBUG = not ON_PYTHONANYWHERE
+ALLOWED_HOSTS = ['*'] if ON_PYTHONANYWHERE else []
 
 
 # Application definition
@@ -84,20 +77,36 @@ WSGI_APPLICATION = 'setup.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'ehotelaria_db',          # Se for no PythonAnywhere: 'usuario$ehotelaria_db'
-        'USER': 'root',       # Geralmente seu username do PythonAnywhere
-        'PASSWORD': '7895123',
-        'HOST': 'localhost',          # Ex: seu_usuario.mysql.pythonanywhere-services.com
-        'PORT': '3306',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'charset': 'utf8mb4',
-        },
+if ON_PYTHONANYWHERE:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'geficogestor$ehotelaria_db',
+            'USER': 'geficogestor',
+            'PASSWORD': 'gefico1234',
+            'HOST': 'geficogestor.mysql.pythonanywhere-services.com',
+            'PORT': '3306',
+            'OPTIONS': {
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+                'charset': 'utf8mb4',
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'ehotelaria_db',
+            'USER': 'root',
+            'PASSWORD': '7895123',
+            'HOST': 'localhost',
+            'PORT': '3306',
+            'OPTIONS': {
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+                'charset': 'utf8mb4',
+            },
+        }
+    }
 
 
 # Password validation
@@ -144,7 +153,5 @@ LOGIN_REDIRECT_URL = '/hotel/mapa/'
 LOGOUT_REDIRECT_URL = 'home'        # Nome da URL da tela inicial
 LOGIN_URL = 'login'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-LANGUAGE_CODE = 'pt-br'
-USE_L10N = True  # Permite localização de formatos
-DATE_INPUT_FORMATS = ('%d/%m/%Y', '%Y-%m-%d') # Diz ao Django para aceitar padrão BR
+USE_L10N = True
+DATE_INPUT_FORMATS = ('%d/%m/%Y', '%Y-%m-%d')
