@@ -5,8 +5,6 @@ from django.utils import timezone
 
 class CategoriaQuarto(ModeloSaaS):
     nome = models.CharField(max_length=100)
-    preco_diaria = models.DecimalField(max_digits=10, decimal_places=2)
-    preco_hora = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
         return self.nome
@@ -15,7 +13,7 @@ class CategoriaQuarto(ModeloSaaS):
         faixa = self.faixas.filter(qtd_hospedes__lte=qtd).order_by('-qtd_hospedes').first()
         if faixa:
             return faixa.preco_diaria if tipo == 'DIARIA' else faixa.preco_hora
-        return self.preco_diaria if tipo == 'DIARIA' else self.preco_hora
+        raise ValueError(f"Nenhuma faixa de preço cadastrada para {qtd} hóspede(s) na categoria '{self.nome}'. Cadastre as faixas antes de realizar check-in.")
 
 
 class FaixaPrecoCategoria(ModeloSaaS):
