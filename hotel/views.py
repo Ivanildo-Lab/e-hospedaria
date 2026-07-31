@@ -409,6 +409,19 @@ def historico_hospedagens_pdf(request):
     total_diarias = historico.filter(tipo='DIARIA').count()
     total_horas = historico.filter(tipo='HORA').count()
 
+    data_inicio_fmt = ''
+    data_fim_fmt = ''
+    if data_inicio:
+        try:
+            data_inicio_fmt = datetime.strptime(data_inicio, '%Y-%m-%d').strftime('%d/%m/%Y')
+        except ValueError:
+            data_inicio_fmt = data_inicio
+    if data_fim:
+        try:
+            data_fim_fmt = datetime.strptime(data_fim, '%Y-%m-%d').strftime('%d/%m/%Y')
+        except ValueError:
+            data_fim_fmt = data_fim
+
     html_string = render(request, 'hotel/relatorio_historico_pdf.html', {
         'historico': historico,
         'empresa': request.user.empresa,
@@ -416,8 +429,8 @@ def historico_hospedagens_pdf(request):
         'total_diarias': total_diarias,
         'total_horas': total_horas,
         'total_faturado': total_faturado,
-        'data_inicio': data_inicio,
-        'data_fim': data_fim,
+        'data_inicio': data_inicio_fmt,
+        'data_fim': data_fim_fmt,
     }).content.decode('utf-8')
 
     pdf = HTML(string=html_string).write_pdf()
