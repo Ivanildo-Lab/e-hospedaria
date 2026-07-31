@@ -229,7 +229,7 @@
             <span>Hora: {% now "H:i" %}</span>
             {% if data_inicio or data_fim %}
             <span>|</span>
-            <span>Período: {% if data_inicio %}{{ data_inicio|date:"d/m/Y" }}{% else %}Início{% endif %} a {% if data_fim %}{{ data_fim|date:"d/m/Y" }}{% else %}Hoje{% endif %}</span>
+            <span>Período: {% if data_inicio %}{{ data_inicio }}{% else %}Início{% endif %} a {% if data_fim %}{{ data_fim }}{% else %}Hoje{% endif %}</span>
             {% else %}
             <span>|</span>
             <span>Todos os registros</span>
