@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
+from django.http import JsonResponse
 from django.utils import timezone
 from decimal import Decimal
 from datetime import timedelta
@@ -9,9 +10,9 @@ from datetime import timedelta
 from core.models import ParametroSistema
 from .models import ConsumoHospedagem, Quarto, CategoriaQuarto, Hospedagem
 from .forms import CheckInForm, CategoriaQuartoForm, QuartoForm, FaixaPrecoFormSet
-# Importando os modelos das outras APPS
 from estoque.models import Produto, EstoqueFrigobar
-from financeiro.models import Conta, Lancamento, PlanoDeContas, Caixa, FormaPagamento 
+from financeiro.models import Conta, Lancamento, PlanoDeContas, Caixa, FormaPagamento
+from cadastros.models import Cadastro
 
 def home(request):
     return render(request, 'home.html')
@@ -335,3 +336,16 @@ def historico_hospedagens(request):
         queryset = queryset.filter(Q(hospede__nome__icontains=q) | Q(quarto__numero__icontains=q))
 
     return render(request, 'hotel/historico_lista.html', {'historico': queryset, 'filtro_q': q})
+
+
+@login_required
+def buscar_hospedes(request):
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse([], safe=False)
+    hospedes = Cadastro.objects.filter(
+        empresa=request.user.empresa, papel__in=['HOSPEDE', 'AMBOS'],
+        situacao='ATIVO', nome__icontains=q
+    ).order_by('nome')[:20]
+    data = [{'id': h.id, 'nome': h.nome, 'cpf': h.cpf or ''} for h in hospedes]
+    return JsonResponse(data, safe=False)

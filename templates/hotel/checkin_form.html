@@ -8,10 +8,21 @@
     <form method="post">
         {% csrf_token %}
         
-        <div class="mb-6">
+        <div class="mb-6 relative">
             <label class="block text-xs font-black text-slate-500 uppercase mb-2">Selecionar Hóspede</label>
-            {{ form.hospede }}
-            <p class="mt-2 text-[10px] text-slate-400">Não encontrou o hóspede? <a href="{% url 'novo_hospede' %}" class="text-blue-600 underline">Cadastre aqui</a></p>
+            <input type="text" id="buscaHospede" placeholder="Digite nome ou CPF para buscar..." autocomplete="off"
+                class="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-blue-500 outline-none transition-all">
+            <div id="resultadosHospede" class="absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 hidden max-h-60 overflow-y-auto"></div>
+            <input type="hidden" name="hospede" id="hospedeId" value="">
+            <div id="hospedeSelecionado" class="mt-2 hidden">
+                <span class="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-bold">
+                    <i class="fa fa-user"></i>
+                    <span id="hospedeNome"></span>
+                    <span id="hospedeCpf" class="text-[10px] text-blue-500 font-normal"></span>
+                    <button type="button" onclick="limparHospede()" class="text-blue-400 hover:text-blue-600 ml-1">&times;</button>
+                </span>
+            </div>
+            <p class="mt-2 text-[10px] text-slate-400">Não encontrou? <a href="{% url 'novo_hospede' %}" class="text-blue-600 underline">Cadastre aqui</a></p>
         </div>
 
         <div class="mb-6">
@@ -61,6 +72,54 @@
 </div>
 
 <script>
+// === BUSCA DE HÓSPEDE ===
+const inputBuscaHospede = document.getElementById('buscaHospede');
+const resultadosHospede = document.getElementById('resultadosHospede');
+const hospedeIdInput = document.getElementById('hospedeId');
+const hospedeSelecionado = document.getElementById('hospedeSelecionado');
+let debounceHospede = null;
+
+inputBuscaHospede.addEventListener('input', function() {
+    clearTimeout(debounceHospede);
+    const q = this.value.trim();
+    if (q.length < 2) { resultadosHospede.classList.add('hidden'); return; }
+    debounceHospede = setTimeout(() => {
+        fetch(`/hotel/api/hospedes/buscar/?q=${encodeURIComponent(q)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.length === 0) { resultadosHospede.innerHTML = '<div class="px-4 py-3 text-sm text-slate-400">Nenhum hóspede encontrado</div>'; resultadosHospede.classList.remove('hidden'); return; }
+                resultadosHospede.innerHTML = data.map(h =>
+                    `<div class="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0" onclick="selecionarHospede(${h.id}, '${h.nome.replace(/'/g, "\\'")}', '${h.cpf}')">
+                        <span class="text-sm font-bold text-slate-700">${h.nome}</span>
+                        ${h.cpf ? `<span class="text-[10px] text-slate-400 ml-2">CPF: ${h.cpf}</span>` : ''}
+                    </div>`
+                ).join('');
+                resultadosHospede.classList.remove('hidden');
+            });
+    }, 300);
+});
+
+function selecionarHospede(id, nome, cpf) {
+    hospedeIdInput.value = id;
+    document.getElementById('hospedeNome').textContent = nome;
+    document.getElementById('hospedeCpf').textContent = cpf ? `CPF: ${cpf}` : '';
+    hospedeSelecionado.classList.remove('hidden');
+    inputBuscaHospede.value = '';
+    resultadosHospede.classList.add('hidden');
+}
+
+function limparHospede() {
+    hospedeIdInput.value = '';
+    hospedeSelecionado.classList.add('hidden');
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#buscaHospede') && !e.target.closest('#resultadosHospede')) {
+        resultadosHospede.classList.add('hidden');
+    }
+});
+
+// === CÁLCULO DE PREÇO ===
 const inputQtd = document.querySelector('[name="quantidade_hospedes"]');
 const tipoSelect = document.querySelector('[name="tipo"]');
 const faixas = document.querySelectorAll('.faixa-preco');
