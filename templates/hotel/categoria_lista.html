@@ -11,7 +11,7 @@
         <div class="p-6 flex justify-between items-center">
             <div>
                 <h4 class="font-black text-slate-800 text-sm">{{ c.nome }}</h4>
-                <p class="text-[10px] text-slate-400 font-bold">Diária base: R$ {{ c.preco_diaria }} | Hora base: R$ {{ c.preco_hora }}</p>
+                <p class="text-[10px] text-slate-400 font-bold">{{ c.faixas.count }} faixa{{ c.faixas.count|pluralize }} de preço cadastrada{{ c.faixas.count|pluralize }}</p>
             </div>
             <div class="flex items-center gap-2">
                 <a href="{% url 'hotel:editar_categoria' c.id %}" class="p-2 bg-slate-100 text-slate-400 rounded-lg hover:bg-blue-600 hover:text-white transition-colors">

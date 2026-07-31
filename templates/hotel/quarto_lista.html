@@ -44,7 +44,7 @@
                     </td>
                     <td class="px-8 py-4">
                         <p class="text-sm font-bold text-slate-600">{{ q.categoria.nome }}</p>
-                        <p class="text-[10px] text-emerald-500 font-black uppercase">R$ {{ q.categoria.preco_diaria }}/dia</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">{{ q.categoria.faixas.count }} faixa{{ q.categoria.faixas.count|pluralize }}</p>
                     </td>
                     <td class="px-8 py-4 text-center">
                         <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter

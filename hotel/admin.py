@@ -3,7 +3,7 @@ from .models import CategoriaQuarto, Quarto, Hospedagem, ConsumoHospedagem, Faix
 
 @admin.register(CategoriaQuarto)
 class CategoriaQuartoAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'preco_diaria', 'preco_hora', 'empresa')
+    list_display = ('nome', 'empresa')
     exclude = ('empresa',)
 
     def save_model(self, request, obj, form, change):

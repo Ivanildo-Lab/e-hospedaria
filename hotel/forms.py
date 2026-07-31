@@ -53,7 +53,7 @@ class FaixaPrecoCategoriaForm(forms.ModelForm):
 class CategoriaQuartoForm(forms.ModelForm):
     class Meta:
         model = CategoriaQuarto
-        fields = ['nome', 'preco_diaria', 'preco_hora']
+        fields = ['nome']
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
