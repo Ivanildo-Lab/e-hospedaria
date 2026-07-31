@@ -19,5 +19,6 @@ urlpatterns = [
     path('quartos/editar/<int:quarto_id>/', views.editar_quarto, name='editar_quarto'),
     path('quartos/excluir/<int:quarto_id>/', views.excluir_quarto, name='excluir_quarto'),
     path('api/hospedes/buscar/', views.buscar_hospedes, name='buscar_hospedes'),
+    path('historico/pdf/', views.historico_hospedagens_pdf, name='historico_hospedagens_pdf'),
 
 ]

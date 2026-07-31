@@ -349,3 +349,36 @@ def buscar_hospedes(request):
     ).order_by('nome')[:20]
     data = [{'id': h.id, 'nome': h.nome, 'cpf': h.cpf or ''} for h in hospedes]
     return JsonResponse(data, safe=False)
+
+
+@login_required
+def historico_hospedagens_pdf(request):
+    from weasyprint import HTML
+
+    historico = Hospedagem.objects.filter(
+        empresa=request.user.empresa, ativa=False
+    ).select_related('quarto', 'hospede').order_by('-data_saida')
+
+    q = request.GET.get('q')
+    if q:
+        from django.db.models import Q
+        historico = historico.filter(Q(hospede__nome__icontains=q) | Q(quarto__numero__icontains=q))
+
+    total_faturado = sum(h.valor_total for h in historico)
+    total_hospedes = historico.count()
+    total_diarias = historico.filter(tipo='DIARIA').count()
+    total_horas = historico.filter(tipo='HORA').count()
+
+    html_string = render(request, 'hotel/relatorio_historico_pdf.html', {
+        'historico': historico,
+        'empresa': request.user.empresa,
+        'total_hospedes': total_hospedes,
+        'total_diarias': total_diarias,
+        'total_horas': total_horas,
+        'total_faturado': total_faturado,
+    }).content.decode('utf-8')
+
+    pdf = HTML(string=html_string).write_pdf()
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="historico_hospedagens.pdf"'
+    return response

@@ -16,6 +16,10 @@
             </div>
             <button type="submit" class="bg-slate-800 text-white px-6 rounded-2xl text-xs font-bold hover:bg-black transition">FILTRAR</button>
         </form>
+        <a href="{% url 'hotel:historico_hospedagens_pdf' %}{% if filtro_q %}?q={{ filtro_q }}{% endif %}" target="_blank"
+           class="flex items-center gap-2 bg-rose-50 text-rose-600 px-6 py-2.5 rounded-2xl text-xs font-bold hover:bg-rose-600 hover:text-white transition-all whitespace-nowrap">
+            <i class="fa fa-file-pdf"></i> RELATÓRIO PDF
+        </a>
     </div>
 
     <!-- TABELA -->
