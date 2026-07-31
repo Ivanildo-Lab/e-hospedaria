@@ -326,16 +326,38 @@ def imprimir_comprovante(request, hospedagem_id):
 
 @login_required
 def historico_hospedagens(request):
-    # Busca apenas hospedagens ENCERRADAS (ativa=False)
     queryset = Hospedagem.objects.filter(empresa=request.user.empresa, ativa=False).order_by('-data_saida')
 
-    # Filtro de busca (Nome do hóspede ou Número do Quarto)
-    q = request.GET.get('q')
+    q = request.GET.get('q', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+
     if q:
         from django.db.models import Q
         queryset = queryset.filter(Q(hospede__nome__icontains=q) | Q(quarto__numero__icontains=q))
 
-    return render(request, 'hotel/historico_lista.html', {'historico': queryset, 'filtro_q': q})
+    if data_inicio:
+        from datetime import datetime
+        try:
+            dt_inicio = datetime.strptime(data_inicio, '%Y-%m-%d')
+            queryset = queryset.filter(data_saida__date__gte=dt_inicio)
+        except ValueError:
+            pass
+
+    if data_fim:
+        from datetime import datetime
+        try:
+            dt_fim = datetime.strptime(data_fim, '%Y-%m-%d')
+            queryset = queryset.filter(data_saida__date__lte=dt_fim)
+        except ValueError:
+            pass
+
+    return render(request, 'hotel/historico_lista.html', {
+        'historico': queryset,
+        'filtro_q': q,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+    })
 
 
 @login_required
@@ -354,12 +376,30 @@ def buscar_hospedes(request):
 @login_required
 def historico_hospedagens_pdf(request):
     from weasyprint import HTML
+    from datetime import datetime
 
     historico = Hospedagem.objects.filter(
         empresa=request.user.empresa, ativa=False
     ).select_related('quarto', 'hospede').order_by('-data_saida')
 
-    q = request.GET.get('q')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    q = request.GET.get('q', '')
+
+    if data_inicio:
+        try:
+            dt_inicio = datetime.strptime(data_inicio, '%Y-%m-%d')
+            historico = historico.filter(data_saida__date__gte=dt_inicio)
+        except ValueError:
+            pass
+
+    if data_fim:
+        try:
+            dt_fim = datetime.strptime(data_fim, '%Y-%m-%d')
+            historico = historico.filter(data_saida__date__lte=dt_fim)
+        except ValueError:
+            pass
+
     if q:
         from django.db.models import Q
         historico = historico.filter(Q(hospede__nome__icontains=q) | Q(quarto__numero__icontains=q))
@@ -376,6 +416,8 @@ def historico_hospedagens_pdf(request):
         'total_diarias': total_diarias,
         'total_horas': total_horas,
         'total_faturado': total_faturado,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
     }).content.decode('utf-8')
 
     pdf = HTML(string=html_string).write_pdf()

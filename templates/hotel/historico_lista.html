@@ -7,19 +7,33 @@
 <div class="max-w-6xl mx-auto space-y-6">
     
     <!-- BARRA DE BUSCA -->
-    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center">
-        <form method="GET" class="flex flex-1 gap-3 w-full">
-            <div class="relative flex-1">
-                <i class="fa fa-search absolute left-4 top-3.5 text-slate-400 text-xs"></i>
-                <input type="text" name="q" value="{{ filtro_q|default:'' }}" placeholder="Buscar por hóspede ou quarto..." 
-                       class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none text-sm">
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <form method="GET" class="flex flex-col md:flex-row gap-4 justify-between items-end">
+            <div class="flex flex-col md:flex-row gap-3 w-full flex-1">
+                <div class="relative flex-1">
+                    <i class="fa fa-search absolute left-4 top-3.5 text-slate-400 text-xs"></i>
+                    <input type="text" name="q" value="{{ filtro_q|default:'' }}" placeholder="Buscar por hóspede ou quarto..." 
+                           class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none text-sm">
+                </div>
+                <div class="flex gap-3">
+                    <div>
+                        <label class="text-[9px] font-black text-slate-400 uppercase mb-1 block">Data Início</label>
+                        <input type="date" name="data_inicio" value="{{ data_inicio|default:'' }}"
+                               class="px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-400 uppercase mb-1 block">Data Fim</label>
+                        <input type="date" name="data_fim" value="{{ data_fim|default:'' }}"
+                               class="px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none text-sm">
+                    </div>
+                </div>
+                <button type="submit" class="bg-slate-800 text-white px-6 py-2.5 rounded-2xl text-xs font-bold hover:bg-black transition">FILTRAR</button>
             </div>
-            <button type="submit" class="bg-slate-800 text-white px-6 rounded-2xl text-xs font-bold hover:bg-black transition">FILTRAR</button>
+            <a href="{% url 'hotel:historico_hospedagens_pdf' %}?q={{ filtro_q|default:'' }}&data_inicio={{ data_inicio|default:'' }}&data_fim={{ data_fim|default:'' }}" target="_blank"
+               class="flex items-center gap-2 bg-rose-50 text-rose-600 px-6 py-2.5 rounded-2xl text-xs font-bold hover:bg-rose-600 hover:text-white transition-all whitespace-nowrap">
+                <i class="fa fa-file-pdf"></i> RELATÓRIO PDF
+            </a>
         </form>
-        <a href="{% url 'hotel:historico_hospedagens_pdf' %}{% if filtro_q %}?q={{ filtro_q }}{% endif %}" target="_blank"
-           class="flex items-center gap-2 bg-rose-50 text-rose-600 px-6 py-2.5 rounded-2xl text-xs font-bold hover:bg-rose-600 hover:text-white transition-all whitespace-nowrap">
-            <i class="fa fa-file-pdf"></i> RELATÓRIO PDF
-        </a>
     </div>
 
     <!-- TABELA -->
